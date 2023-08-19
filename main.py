@@ -1,12 +1,37 @@
 import pygame
 import pygame.gfxdraw
+import math
 
 # pygame setup
 pygame.init()
 
 height, width = 1280, 720
 
+
 screen = pygame.display.set_mode((height, width))
+
+# Center and radius of pie chart
+cx, cy, r = 100, 320, 75
+
+# Background circle
+pygame.draw.circle(screen, (17, 153, 255), (cx, cy), r)
+
+# Calculate the angle in degrees
+angle = 150
+
+# Start list of polygon points
+p = [(cx, cy)]
+
+# Get points on arc
+for n in range(0, int(angle)):
+    x = cx + int(r*math.cos(n*math.pi/180))
+    y = cy+ int(r*math.sin(n*math.pi/180))
+    p.append((x, y))
+p.append((cx, cy))
+
+
+
+
 clock = pygame.time.Clock()
 running = True
 dt = 0
@@ -59,6 +84,8 @@ while running:
     surf2.fill(pygame.Color(0, 0, 0, 0))
     surf1.fill(pygame.Color(0, 0, 0, 0))
 
+    if len(p) > 2:
+        pygame.draw.polygon(screen, (0, 0, 0), p)
     # flip() the display to put your work on screen
     pygame.display.flip()
 
@@ -68,3 +95,10 @@ while running:
     dt = clock.tick(60) / 1000
 
 pygame.quit()
+
+
+
+
+
+
+
