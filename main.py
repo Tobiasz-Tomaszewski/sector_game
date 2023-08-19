@@ -1,14 +1,27 @@
-# Example file showing a circle moving on screen
 import pygame
+import pygame.gfxdraw
 
 # pygame setup
 pygame.init()
-screen = pygame.display.set_mode((1280, 720))
+
+height, width = 1280, 720
+
+screen = pygame.display.set_mode((height, width))
 clock = pygame.time.Clock()
 running = True
 dt = 0
 
-player_pos = pygame.Vector2(screen.get_width() / 2, screen.get_height() / 2)
+centre = screen.get_width() / 2, screen.get_height() / 2
+
+player_pos = pygame.Vector2(centre[0], centre[1])
+
+pos1, rad1 = centre, 100
+pos2, rad2 = centre, 110
+
+surf1 = pygame.Surface((height, width), pygame.SRCALPHA)
+surf2 = pygame.Surface((height, width), pygame.SRCALPHA)
+
+surf2.blit(surf1, (0, 0), special_flags=pygame.BLEND_RGBA_SUB)
 
 while running:
     # poll for events
@@ -18,8 +31,7 @@ while running:
             running = False
 
     # fill the screen with a color to wipe away anything from last frame
-    screen.fill("purple")
-
+    screen.fill("tomato")
     pygame.draw.circle(screen, "red", player_pos, 40)
 
     keys = pygame.key.get_pressed()
@@ -31,6 +43,21 @@ while running:
         player_pos.x -= 300 * dt
     if keys[pygame.K_d]:
         player_pos.x += 300 * dt
+    if keys[pygame.K_UP]:
+        rad1 = rad1 + 1
+        rad2 = rad2 + 1
+    if keys[pygame.K_DOWN]:
+        rad1 = rad1 - 1
+        rad2 = rad2 - 1
+
+    pygame.draw.circle(surf1, (255, 0, 0, 255), pos1, rad1)
+    pygame.draw.circle(surf2, (255, 0, 0, 255), pos2, rad2)
+
+    surf2.blit(surf1, (0, 0), special_flags=pygame.BLEND_RGBA_SUB)
+
+    screen.blit(surf2, (0, 0))
+    surf2.fill(pygame.Color(0, 0, 0, 0))
+    surf1.fill(pygame.Color(0, 0, 0, 0))
 
     # flip() the display to put your work on screen
     pygame.display.flip()
