@@ -15,16 +15,25 @@ screen = pygame.display.set_mode((height, width))
 centre = screen.get_width() / 2, screen.get_height() / 2
 
 class Player:
-    def __init__(self, centre, radius, speed):
+    def __init__(self, centre, radius, speed=1):
         self.radius = radius
         self.centre = centre
         self.player_position = centre[0], centre[1] + self.radius
         self.speed = speed
+        self.is_alive = True
 
-    def move_clockwise(self):
+    def move(self):
+        angle = self.speed * (math.pi / 180)  # change angle from degrees to radians
+        sin_ = math.sin(angle)
+        cos_ = math.cos(angle)
+        rotation_matrix = np.array([[cos_, -sin_],
+                                    [sin_, cos_]])
+        self.player_position = tuple(np.dot(rotation_matrix, np.array(self.player_position)))
+
+    def draw_player(self, screen, SurfaceHandler):
         pass
 
-    def move_countercloskwise(self):
+    def check_alive_status(self, ObstacleHandler):
         pass
 
 
@@ -60,7 +69,7 @@ class SurfaceHandler:
 
 
 class Obstacle:
-    def __init__(self, start_angle, angle, speed = 1):
+    def __init__(self, start_angle, angle, speed=1):
         # Obstacle will start on the edge of the screen.
         self.inner_radius = math.sqrt((centre[0])**2 + (centre[1])**2)
         self.outer_radius = math.sqrt((centre[0])**2 + (centre[1])**2) + 10
