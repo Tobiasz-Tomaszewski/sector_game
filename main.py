@@ -15,12 +15,12 @@ screen = pygame.display.set_mode((height, width))
 centre = screen.get_width() / 2, screen.get_height() / 2
 
 class Player:
-    def __init__(self, centre, radius, speed=1):
+    def __init__(self, centre, radius, speed=1, curve_nr=0, path_deviation=0):
         self.radius = radius
         self.centre = centre
         self.speed = speed
         self.is_alive = True
-        self.player_path = self.generate_player_path(0, 0)
+        self.player_path = self.generate_player_path(curve_nr, path_deviation)
         self.player_position = self.player_path[0]
 
     @staticmethod
@@ -55,6 +55,9 @@ class Player:
 
     def draw_player(self, screen):
         pygame.draw.circle(screen, "yellow", self.player_position, 10)
+
+    def draw_player_path(self, screen):
+        pygame.draw.polygon(screen, 'black', self.player_path, width=1)
 
     def check_alive_status(self, ObstacleHandler):
         pass
@@ -180,12 +183,11 @@ pygame.draw.circle(screen, (17, 153, 255), (cx, cy), r)
 clock = pygame.time.Clock()
 running = True
 dt = 0
-player_pos = pygame.Vector2(0, 0)
 pos1, rad1 = centre, 100
 pos2, rad2 = centre, 110
 surf1 = pygame.Surface((height, width), pygame.SRCALPHA)
 surf2 = pygame.Surface((height, width), pygame.SRCALPHA)
-player = Player(centre, 100)
+player = Player(centre, 100, curve_nr=4, path_deviation=40)
 while running:
     # poll for events
     # pygame.QUIT event means the user clicked X to close your window
@@ -194,21 +196,13 @@ while running:
             running = False
     # fill the screen with a color to wipe away anything from last frame
     screen.fill("tomato")
-    pygame.draw.circle(screen, "red", player_pos, 40)
     player.draw_player(screen)
+    player.draw_player_path(screen)
     keys = pygame.key.get_pressed()
     if keys[pygame.K_p]:
         player.move_clockwise()
     if keys[pygame.K_l]:
         player.move_counterclockwise()
-    if keys[pygame.K_w]:
-        player_pos.y -= 300 * dt
-    if keys[pygame.K_s]:
-        player_pos.y += 300 * dt
-    if keys[pygame.K_a]:
-        player_pos.x -= 300 * dt
-    if keys[pygame.K_d]:
-        player_pos.x += 300 * dt
     if keys[pygame.K_UP]:
         rad1 = rad1 + 1
         rad2 = rad2 + 1
@@ -216,11 +210,6 @@ while running:
         rad1 = rad1 - 1
         rad2 = rad2 - 1
 
-
-    test_surface_handler = SurfaceHandler(screen)
-    create_test_surface = test_surface_handler.create_surface()
-    pygame.draw.circle(test_surface_handler.get_surface(create_test_surface), (255, 0, 0, 255), pos2, 10)
-    screen.blit(test_surface_handler.get_surface(create_test_surface), (0, 0))
 
 
     pygame.draw.circle(surf1, (255, 0, 0, 255), pos1, rad1)
