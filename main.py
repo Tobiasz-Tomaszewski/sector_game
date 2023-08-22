@@ -18,30 +18,54 @@ class Player:
     def __init__(self, centre, radius, speed=1):
         self.radius = radius
         self.centre = centre
-        self.player_position = centre[0], centre[1] + self.radius
         self.speed = speed
         self.is_alive = True
+        self.player_path = self.generate_player_path(0, 0)
+        self.player_position = self.player_path[0]
 
-    def move(self):
-        angle = self.speed * (math.pi / 180)  # change angle from degrees to radians
-        sin_ = math.sin(angle)
-        cos_ = math.cos(angle)
-        rotation_matrix = np.array([[cos_, -sin_],
-                                    [sin_, cos_]])
-        self.player_position = tuple(np.dot(rotation_matrix, np.array(self.player_position)))
+    @staticmethod
+    def _polar_to_cartesian(coordinates):
+        x = coordinates[0] * math.cos(coordinates[1])
+        y = coordinates[0] * math.sin(coordinates[1])
+        return x, y
 
-    def draw_player(self, screen, SurfaceHandler):
-        pass
+    def generate_player_path(self, curve_nr, path_deviation):
+        phi = np.array([i * (math.pi / 180) for i in range(360)])
+        r = np.array([self.radius + math.sin(curve_nr * phi[i]) * path_deviation for i in range(360)])
+        x_list = []
+        y_list = []
+        for x, y in zip(r, phi):
+            cart = self._polar_to_cartesian((x, y))
+            x_list.append(cart[0])
+            y_list.append(cart[1])
+        x_list = [x + height / 2 for x in x_list]
+        y_list = [y + width / 2 for y in y_list]
+        player_path = [pygame.Vector2(x, y) for x, y in zip(x_list, y_list)]
+        return player_path
+
+    def move_clockwise(self):
+        current_index = self.player_path.index(self.player_position)
+        next_index = (current_index + 1) % len(self.player_path)
+        self.player_position = self.player_path[next_index]
+
+    def move_counterclockwise(self):
+        current_index = self.player_path.index(self.player_position)
+        next_index = current_index - 1
+        self.player_position = self.player_path[next_index]
+
+    def draw_player(self, screen):
+        pygame.draw.circle(screen, "yellow", self.player_position, 10)
 
     def check_alive_status(self, ObstacleHandler):
         pass
 
 
 class SurfaceHandler:
-    def __init__(self, height, width):
+    def __init__(self, screen):
         self.surfaces = {}
-        self.height = height
-        self.width = width
+        self.screen = screen
+        self.height = screen.get_height()
+        self.width = screen.get_width()
 
     def create_surface(self):
         surface_name = self.create_available_name()
@@ -117,7 +141,7 @@ class Obstacle:
         rotated_points = [(x + self.centre[0], y + self.centre[1]) for x, y in rotated_points]
         return rotated_points
 
-    def draw_obstacle(self, screen, SurfaceHandler):
+    def draw_obstacle(self, SurfaceHandler):
         SurfaceHandler.create_surface()
 
 
@@ -161,6 +185,7 @@ pos1, rad1 = centre, 100
 pos2, rad2 = centre, 110
 surf1 = pygame.Surface((height, width), pygame.SRCALPHA)
 surf2 = pygame.Surface((height, width), pygame.SRCALPHA)
+player = Player(centre, 100)
 while running:
     # poll for events
     # pygame.QUIT event means the user clicked X to close your window
@@ -170,7 +195,12 @@ while running:
     # fill the screen with a color to wipe away anything from last frame
     screen.fill("tomato")
     pygame.draw.circle(screen, "red", player_pos, 40)
+    player.draw_player(screen)
     keys = pygame.key.get_pressed()
+    if keys[pygame.K_p]:
+        player.move_clockwise()
+    if keys[pygame.K_l]:
+        player.move_counterclockwise()
     if keys[pygame.K_w]:
         player_pos.y -= 300 * dt
     if keys[pygame.K_s]:
@@ -187,7 +217,7 @@ while running:
         rad2 = rad2 - 1
 
 
-    test_surface_handler = SurfaceHandler(height, width)
+    test_surface_handler = SurfaceHandler(screen)
     create_test_surface = test_surface_handler.create_surface()
     pygame.draw.circle(test_surface_handler.get_surface(create_test_surface), (255, 0, 0, 255), pos2, 10)
     screen.blit(test_surface_handler.get_surface(create_test_surface), (0, 0))
