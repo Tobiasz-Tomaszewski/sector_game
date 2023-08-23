@@ -55,7 +55,7 @@ class Player:
 
 
 class Obstacle:
-    def __init__(self, start_angle, angle, speed=1):
+    def __init__(self, start_angle, angle, speed=100):
         # Obstacle will start on the edge of the screen.
         self.inner_radius = math.sqrt((centre[0])**2 + (centre[1])**2)
         self.outer_radius = math.sqrt((centre[0])**2 + (centre[1])**2) + 10
@@ -79,9 +79,9 @@ class Obstacle:
         points = outer_points + inner_points + [outer_points[0]]
         return points
 
-    def move_obstacle(self):
-        self.inner_radius -= self.speed
-        self.outer_radius -= self.speed
+    def move_obstacle(self, dt):
+        self.inner_radius -= self.speed * dt
+        self.outer_radius -= self.speed * dt
 
     def rotate_obstacle(self, rotation_angle):
         points_to_be_rotated = self.create_sector_of_the_ring_points()
@@ -155,7 +155,7 @@ while running:
         path_perc -= dt * 40
         player.move(path_perc)
 
-    obstacle.move_obstacle()
+    obstacle.move_obstacle(dt)
 
     # flip() the display to put your work on screen
     pygame.display.flip()
