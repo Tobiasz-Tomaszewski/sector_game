@@ -54,38 +54,6 @@ class Player:
         pass
 
 
-class SurfaceHandler:
-    def __init__(self, screen):
-        self.surfaces = {}
-        self.screen = screen
-        self.height = screen.get_height()
-        self.width = screen.get_width()
-
-    def create_surface(self):
-        surface_name = self.create_available_name()
-        surface = pygame.Surface((self.height, self.width), pygame.SRCALPHA)
-        self.add_surface(surface_name, surface)
-        return surface_name
-
-    def add_surface(self, surface_name, surface):
-        self.surfaces[surface_name] = surface
-
-    def get_surface(self, surface_name):
-        return self.surfaces[surface_name]
-
-    def create_available_name(self):
-        current_indexes = sorted(int(x) for x in self.surfaces.keys())
-        all_indexes = [x for x in range(len(self.surfaces))]
-        zipped = zip(current_indexes, all_indexes)
-        unused_indexes = [y for x, y in zipped if x != y]
-        if unused_indexes:
-            return str(min(unused_indexes))
-        return '0'
-
-    def delete_surface(self, surface_name):
-        return self.surfaces.pop(surface_name)
-
-
 class Obstacle:
     def __init__(self, start_angle, angle, speed=1):
         # Obstacle will start on the edge of the screen.
