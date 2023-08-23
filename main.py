@@ -109,9 +109,11 @@ class Obstacle:
 
 
 class ObstacleHandler(Obstacle):
-    def __init__(self, max_angle):
+    def __init__(self, max_angle, distance_between_obstacles = 400):
         self.obstacles = {}
         self.max_angle = max_angle
+        self.last_created_obstacle = None
+        self.distance_between_obstacles = distance_between_obstacles
 
     def add_obstacle(self, obstacle_name, obstacle):
         self.obstacles[obstacle_name] = obstacle
@@ -130,22 +132,42 @@ class ObstacleHandler(Obstacle):
         unused_indexes = [y for x, y in zipped if x != y]
         if unused_indexes:
             return str(min(unused_indexes))
-        return '0'
+        if not self.obstacles:
+            return '0'
+        return str(len(self.obstacles))
 
     def create_new_obstacle(self):
         start_angle = random.uniform(low=0, high=360)
         angle = random.uniform(low=0, high=self.max_angle)
-        o = Obstacle(start_angle, angle)
         name = self.create_available_name()
-        self.add_obstacle(name, o)
+        self.add_obstacle(name, Obstacle(start_angle, angle))
+        self.last_created_obstacle = name
+
+    def move_all_obstacles(self, dt):
+        for obstacle in self.obstacles.values():
+            obstacle.move_obstacle(dt)
+
+    def generate_next(self):
+        if (self.obstacles[self.last_created_obstacle].outer_radius <
+                math.sqrt((centre[0])**2 + (centre[1])**2) - self.distance_between_obstacles):
+            self.create_new_obstacle()
+
+    def delete_dead_obstacles(self):
+        to_delete = []
+        for name, obstacle in self.obstacles.items():
+            if not obstacle.is_alive:
+                to_delete.append(name)
+        for dead in to_delete:
+            self.delete_obstacle(dead)
 
 
 clock = pygame.time.Clock()
 running = True
 dt = 0
-player = Player(centre, 100, curve_nr=4, path_deviation=20)
-obstacle_handler = ObstacleHandler(270)
+player = Player(centre, 100, curve_nr=8, path_deviation=40)
+obstacle_handler = ObstacleHandler(270, 200)
 obstacle_handler.create_new_obstacle()
+time = 0
 path_perc = 0
 while running:
     # poll for events
@@ -166,7 +188,9 @@ while running:
         path_perc -= dt * 40
         player.move(path_perc)
 
-    obstacle_handler.obstacles['0'].move_obstacle(dt)
+    obstacle_handler.move_all_obstacles(dt)
+    obstacle_handler.generate_next()
+    obstacle_handler.delete_dead_obstacles()
 
     # flip() the display to put your work on screen
     pygame.display.flip()
@@ -175,5 +199,6 @@ while running:
     # dt is delta time in seconds since last frame, used for framerate-
     # independent physics.
     dt = clock.tick(60) / 1000
+    time += dt
 
 pygame.quit()
