@@ -2,6 +2,7 @@ import pygame
 import pygame.gfxdraw
 import math
 import numpy as np
+from numpy import random
 
 
 # pygame setup
@@ -107,15 +108,17 @@ class Obstacle:
             self.is_alive = False
 
 
-class ObstacleHandler:
-    def __init__(self):
+class ObstacleHandler(Obstacle):
+    def __init__(self, max_angle):
         self.obstacles = {}
+        self.max_angle = max_angle
 
     def add_obstacle(self, obstacle_name, obstacle):
         self.obstacles[obstacle_name] = obstacle
 
     def draw_obstacles(self, screen):
-        pass
+        for obstacle in self.obstacles.values():
+            obstacle.draw_obstacle(screen)
 
     def delete_obstacle(self, obstacle_name):
         return self.obstacles.pop(obstacle_name)
@@ -129,12 +132,20 @@ class ObstacleHandler:
             return str(min(unused_indexes))
         return '0'
 
+    def create_new_obstacle(self):
+        start_angle = random.uniform(low=0, high=360)
+        angle = random.uniform(low=0, high=self.max_angle)
+        o = Obstacle(start_angle, angle)
+        name = self.create_available_name()
+        self.add_obstacle(name, o)
+
 
 clock = pygame.time.Clock()
 running = True
 dt = 0
 player = Player(centre, 100, curve_nr=4, path_deviation=20)
-obstacle = Obstacle(40, 300)
+obstacle_handler = ObstacleHandler(270)
+obstacle_handler.create_new_obstacle()
 path_perc = 0
 while running:
     # poll for events
@@ -146,7 +157,7 @@ while running:
     screen.fill("tomato")
     player.draw_player(screen)
     player.draw_player_path(screen)
-    obstacle.draw_obstacle(screen)
+    obstacle_handler.draw_obstacles(screen)
     keys = pygame.key.get_pressed()
     if keys[pygame.K_p]:
         path_perc += dt * 40
@@ -155,7 +166,7 @@ while running:
         path_perc -= dt * 40
         player.move(path_perc)
 
-    obstacle.move_obstacle(dt)
+    obstacle_handler.obstacles['0'].move_obstacle(dt)
 
     # flip() the display to put your work on screen
     pygame.display.flip()
