@@ -9,19 +9,21 @@ pygame.init()
 
 global height, width
 height, width = 1280, 720
-
 screen = pygame.display.set_mode((height, width))
-
 centre = screen.get_width() / 2, screen.get_height() / 2
 
+
 class Player:
-    def __init__(self, centre, radius, speed=1, curve_nr=0, path_deviation=0):
+    def __init__(self, centre, radius, curve_nr=0, path_deviation=0,
+                 player_path_resolution=100):
         self.radius = radius
         self.centre = centre
-        self.speed = speed
         self.is_alive = True
-        self.player_path = self.generate_player_path(curve_nr, path_deviation)
-        self.player_position = self.player_path[0]
+        self.curve_nr = curve_nr
+        self.path_deviation = path_deviation
+        self.player_path_resolution = player_path_resolution
+        self.player_path = self.generate_player_path()
+        self.player_position = self.move(0)
 
     @staticmethod
     def _polar_to_cartesian(coordinates):
@@ -29,32 +31,21 @@ class Player:
         y = coordinates[0] * math.sin(coordinates[1])
         return x, y
 
-    def generate_player_path(self, curve_nr, path_deviation):
-        phi = np.array([i * (math.pi / 180) for i in range(360)])
-        r = np.array([self.radius + math.sin(curve_nr * phi[i]) * path_deviation for i in range(360)])
-        x_list = []
-        y_list = []
-        for x, y in zip(r, phi):
-            cart = self._polar_to_cartesian((x, y))
-            x_list.append(cart[0])
-            y_list.append(cart[1])
-        x_list = [x + height / 2 for x in x_list]
-        y_list = [y + width / 2 for y in y_list]
-        player_path = [pygame.Vector2(x, y) for x, y in zip(x_list, y_list)]
+    def generate_player_path(self):
+        player_path = [self.move(i) for i in range(self.player_path_resolution)]
         return player_path
 
-    def move_clockwise(self):
-        current_index = self.player_path.index(self.player_position)
-        next_index = (current_index + 1) % len(self.player_path)
-        self.player_position = self.player_path[next_index]
-
-    def move_counterclockwise(self):
-        current_index = self.player_path.index(self.player_position)
-        next_index = current_index - 1
-        self.player_position = self.player_path[next_index]
+    def move(self, N):
+        N = N % self.player_path_resolution
+        phi = 2 * math.pi * (N / self.player_path_resolution)
+        r = self.radius + math.sin(self.curve_nr * phi) * self.path_deviation
+        player_pos = self._polar_to_cartesian((r, phi))
+        player_pos = player_pos[0] + self.centre[0], player_pos[1] + self.centre[1]
+        self.player_position = player_pos
+        return self.player_position
 
     def draw_player(self, screen):
-        pygame.draw.circle(screen, "yellow", self.player_position, 10)
+        pygame.draw.circle(screen, 'yellow', self.player_position, 10)
 
     def draw_player_path(self, screen):
         pygame.draw.polygon(screen, 'black', self.player_path, width=1)
@@ -104,11 +95,10 @@ class Obstacle:
         self.angle = angle
         self.centre = centre
         self.speed = speed
+        self.is_alive = True
 
     def create_polygon_points(self, radius):
-        # Start list of polygon points
         polygon_points = []
-        # Get points on arc
         for n in range(0, int(self.angle)):
             x = self.centre[0] + int(radius * math.cos(n * math.pi / 180))
             y = self.centre[1] + int(radius * math.sin(n * math.pi / 180))
@@ -125,11 +115,6 @@ class Obstacle:
         self.inner_radius -= self.speed
         self.outer_radius -= self.speed
 
-    def create_sector_of_the_ring(self, SurfaceHandler, ObstacleHandler):
-        points = self.create_sector_of_the_ring_points()
-        surface_id = SurfaceHandler.create_surface()
-        surface = SurfaceHandler.get_surface(surface_id)
-
     def rotate_obstacle(self, rotation_angle):
         points_to_be_rotated = self.create_sector_of_the_ring_points()
         points_to_be_rotated = [(x - self.centre[0], y - self.centre[1]) for x, y in points_to_be_rotated]
@@ -144,8 +129,14 @@ class Obstacle:
         rotated_points = [(x + self.centre[0], y + self.centre[1]) for x, y in rotated_points]
         return rotated_points
 
-    def draw_obstacle(self, SurfaceHandler):
-        SurfaceHandler.create_surface()
+    def draw_obstacle(self, screen):
+        self.update_alive_status()
+        if self.is_alive:
+            pygame.draw.polygon(screen, 'blue', self.rotate_obstacle(self.start_angle))
+
+    def update_alive_status(self):
+        if self.inner_radius < 0:
+            self.is_alive = False
 
 
 class ObstacleHandler:
@@ -171,23 +162,12 @@ class ObstacleHandler:
         return '0'
 
 
-# Center and radius of pie rchart
-cx, cy, r = 100, 320, 75
-
-# Background circle
-pygame.draw.circle(screen, (17, 153, 255), (cx, cy), r)
-
-
-
-
 clock = pygame.time.Clock()
 running = True
 dt = 0
-pos1, rad1 = centre, 100
-pos2, rad2 = centre, 110
-surf1 = pygame.Surface((height, width), pygame.SRCALPHA)
-surf2 = pygame.Surface((height, width), pygame.SRCALPHA)
-player = Player(centre, 100, curve_nr=4, path_deviation=40)
+player = Player(centre, 100, curve_nr=4, path_deviation=20)
+obstacle = Obstacle(40, 300)
+path_perc = 0
 while running:
     # poll for events
     # pygame.QUIT event means the user clicked X to close your window
@@ -198,31 +178,17 @@ while running:
     screen.fill("tomato")
     player.draw_player(screen)
     player.draw_player_path(screen)
+    obstacle.draw_obstacle(screen)
     keys = pygame.key.get_pressed()
     if keys[pygame.K_p]:
-        player.move_clockwise()
+        path_perc += dt * 40
+        player.move(path_perc)
     if keys[pygame.K_l]:
-        player.move_counterclockwise()
-    if keys[pygame.K_UP]:
-        rad1 = rad1 + 1
-        rad2 = rad2 + 1
-    if keys[pygame.K_DOWN]:
-        rad1 = rad1 - 1
-        rad2 = rad2 - 1
+        path_perc -= dt * 40
+        player.move(path_perc)
 
+    obstacle.move_obstacle()
 
-
-    pygame.draw.circle(surf1, (255, 0, 0, 255), pos1, rad1)
-    pygame.draw.circle(surf2, (255, 0, 0, 255), pos2, rad2)
-    surf2.blit(surf1, (0, 0), special_flags=pygame.BLEND_RGBA_SUB)
-    screen.blit(surf2, (0, 0))
-    surf2.fill(pygame.Color(0, 0, 0, 0))
-    surf1.fill(pygame.Color(0, 0, 0, 0))
-
-
-
-####    if len(p) > 2:
-####        pygame.draw.polygon(screen, (0, 0, 0), p)
     # flip() the display to put your work on screen
     pygame.display.flip()
 
