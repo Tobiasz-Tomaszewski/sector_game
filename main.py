@@ -109,8 +109,9 @@ class Obstacle:
 
 
 class ObstacleHandler(Obstacle):
-    def __init__(self, max_angle, distance_between_obstacles = 400):
+    def __init__(self, min_angle, max_angle, distance_between_obstacles = 400):
         self.obstacles = {}
+        self.min_angle = min_angle
         self.max_angle = max_angle
         self.last_created_obstacle = None
         self.distance_between_obstacles = distance_between_obstacles
@@ -138,7 +139,7 @@ class ObstacleHandler(Obstacle):
 
     def create_new_obstacle(self):
         start_angle = random.uniform(low=0, high=360)
-        angle = random.uniform(low=0, high=self.max_angle)
+        angle = random.uniform(low=self.min_angle, high=self.max_angle)
         name = self.create_available_name()
         self.add_obstacle(name, Obstacle(start_angle, angle))
         self.last_created_obstacle = name
@@ -161,36 +162,53 @@ class ObstacleHandler(Obstacle):
             self.delete_obstacle(dead)
 
 
+class Game:
+    def __init__(self, player, obstacle_handler):
+        self.player = player
+        self.obstacle_handler = obstacle_handler
+        self.path_perc = 0
+
+    def create_init_obstacle(self):
+        self.obstacle_handler.create_new_obstacle()
+
+    def change_path_perc(self, val):
+        self.path_perc += val
+
+    def draw_game_screen(self, screen, dt):
+        self.screen.fill("tomato")
+        self.player.draw_player(screen)
+        self.player.draw_player_path(screen)
+        self.obstacle_handler.draw_obstacles(screen)
+        self.obstacle_handler.move_all_obstacles(dt)
+        self.obstacle_handler.generate_next()
+        self.obstacle_handler.delete_dead_obstacles()
+
+    def handle_events(self, dt):
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_RIGHT]:
+            self.change_path_perc(dt * 40)
+            self.player.move(self.path_perc)
+        if keys[pygame.K_LEFT]:
+            self.change_path_perc(-dt * 40)
+            self.player.move(self.path_perc)
+
+
 clock = pygame.time.Clock()
 running = True
 dt = 0
-player = Player(centre, 100, curve_nr=8, path_deviation=40)
-obstacle_handler = ObstacleHandler(270, 200)
-obstacle_handler.create_new_obstacle()
-time = 0
-path_perc = 0
+player = Player(centre, 100, curve_nr=8, path_deviation=10)
+obstacle_handler = ObstacleHandler(45, 270, 200)
+game = Game(player, obstacle_handler)
+game.create_init_obstacle()
 while running:
     # poll for events
     # pygame.QUIT event means the user clicked X to close your window
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-    # fill the screen with a color to wipe away anything from last frame
-    screen.fill("tomato")
-    player.draw_player(screen)
-    player.draw_player_path(screen)
-    obstacle_handler.draw_obstacles(screen)
-    keys = pygame.key.get_pressed()
-    if keys[pygame.K_p]:
-        path_perc += dt * 40
-        player.move(path_perc)
-    if keys[pygame.K_l]:
-        path_perc -= dt * 40
-        player.move(path_perc)
 
-    obstacle_handler.move_all_obstacles(dt)
-    obstacle_handler.generate_next()
-    obstacle_handler.delete_dead_obstacles()
+    game.draw_game_screen(screen, dt)
+    game.handle_events(dt)
 
     # flip() the display to put your work on screen
     pygame.display.flip()
@@ -199,6 +217,6 @@ while running:
     # dt is delta time in seconds since last frame, used for framerate-
     # independent physics.
     dt = clock.tick(60) / 1000
-    time += dt
+
 
 pygame.quit()
