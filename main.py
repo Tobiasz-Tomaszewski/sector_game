@@ -3,7 +3,7 @@ import pygame.gfxdraw
 import math
 import numpy as np
 from numpy import random
-
+import sys
 
 # pygame setup
 pygame.init()
@@ -168,6 +168,7 @@ class Game:
         self.obstacle_handler = obstacle_handler
         self.path_perc = 0
         self.initial_obstacle = False
+        self.single_click = False
 
     def create_init_obstacle(self):
         self.obstacle_handler.create_new_obstacle()
@@ -176,7 +177,7 @@ class Game:
     def change_path_perc(self, val):
         self.path_perc += val
 
-    def draw_screen(self, screen, dt):
+    def draw_screen(self, TextHandler, screen, dt):
         screen.fill("tomato")
         self.player.draw_player(screen)
         self.player.draw_player_path(screen)
@@ -187,7 +188,7 @@ class Game:
         self.obstacle_handler.generate_next()
         self.obstacle_handler.delete_dead_obstacles()
 
-    def handle_events(self, dt):
+    def handle_events(self, dt, event):
         keys = pygame.key.get_pressed()
         if keys[pygame.K_RIGHT]:
             self.change_path_perc(dt * 40)
@@ -214,26 +215,39 @@ class Menu:
                              'test2': 'other_action',
                              'test3': 'other_action',
                              'test4': 'other_action'}
-        self.currently_chosen = list(self.menu_options.keys())[0]
+        self.currently_chosen_index = 0
+        self.currently_chosen = list(self.menu_options.keys())[self.currently_chosen_index]
+        self.single_click = True
 
     def draw_screen(self, TextHandler, screen, dt):
         screen.fill("tomato")
         text_pos = centre
         for option in self.menu_options.keys():
-            TextHandler.draw_text(screen, option, 'red', text_pos)
+            if option == self.currently_chosen:
+                TextHandler.draw_text(screen, option, 'purple', text_pos)
+            else:
+                TextHandler.draw_text(screen, option, 'red', text_pos)
             text_pos = text_pos[0], text_pos[1] + TextHandler.font_size
 
-    def handle_events(self, dt):
-        pass
+    def handle_events(self, dt, event):
+        # checking if keydown event happened or not
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_DOWN:
+                self.currently_chosen_index += 1
+                self.currently_chosen = list(self.menu_options.keys())[self.currently_chosen_index]
+            elif event.key == pygame.K_UP:
+                self.currently_chosen_index -= 1
+                self.currently_chosen = list(self.menu_options.keys())[self.currently_chosen_index]
 
 
 class ScreenHandler:
     def __init__(self, game, menu):
         self.game = game
         self.menu = menu
-        self.current_screen = menu
+        self.current_screen = game
         self.available_screens = {'game': self.game,
                                   'menu:': self.menu}
+        self.single_click = self.current_screen.single_click
 
     def change_current_screen(self, new_screen):
         self.current_screen = self.available_screens[new_screen]
@@ -241,8 +255,8 @@ class ScreenHandler:
     def draw_screen(self, TextHandler, screen, dt):
         self.current_screen.draw_screen(TextHandler, screen, dt)
 
-    def handle_events(self, dt):
-        self.current_screen.handle_events(dt)
+    def handle_events(self, dt, event):
+        self.current_screen.handle_events(dt, event)
 
 
 clock = pygame.time.Clock()
@@ -257,12 +271,16 @@ screen_handler = ScreenHandler(game, menu)
 while running:
     # poll for events
     # pygame.QUIT event means the user clicked X to close your window
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
-
+    event = None
+    if screen_handler.single_click:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+            screen_handler.handle_events(dt, event)
+    else:
+        screen_handler.handle_events(dt, event)
     screen_handler.draw_screen(text_handler, screen, dt)
-    screen_handler.handle_events(dt)
+
 
 
     # flip() the display to put your work on screen
