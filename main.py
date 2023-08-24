@@ -1,9 +1,13 @@
+
 import pygame
 import pygame.gfxdraw
 import math
 import numpy as np
 from numpy import random
 import sys
+
+global running
+running = True
 
 # pygame setup
 pygame.init()
@@ -259,8 +263,28 @@ class ScreenHandler:
         self.current_screen.handle_events(dt, event)
 
 
+class EventHandler:
+    def __init__(self, ScreenHandler):
+        self.screen_handler = ScreenHandler
+        self.single_click = ScreenHandler.single_click
+
+    def handle_events(self, dt):
+        if self.single_click:
+            for event in pygame.event.get():
+                # if event.type == pygame.QUIT:
+                #     global running
+                #     running = False
+                screen_handler.handle_events(dt, event)
+        else:
+            # for event in pygame.event.get():
+            #     if event.type == pygame.QUIT:
+            #         global running
+            #         running = False
+            event = None
+            screen_handler.handle_events(dt, event)
+
+
 clock = pygame.time.Clock()
-running = True
 dt = 0
 player = Player(centre, 100, curve_nr=8, path_deviation=10)
 obstacle_handler = ObstacleHandler(45, 270, 200)
@@ -268,17 +292,11 @@ game = Game(player, obstacle_handler)
 menu = Menu()
 text_handler = TextHandler(40)
 screen_handler = ScreenHandler(game, menu)
+event_handler = EventHandler(screen_handler)
 while running:
     # poll for events
     # pygame.QUIT event means the user clicked X to close your window
-    event = None
-    if screen_handler.single_click:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                running = False
-            screen_handler.handle_events(dt, event)
-    else:
-        screen_handler.handle_events(dt, event)
+    event_handler.handle_events(dt)
     screen_handler.draw_screen(text_handler, screen, dt)
 
 
