@@ -197,6 +197,29 @@ class Game:
             self.player.move(self.path_perc)
 
 
+class TextHandler:
+    def __init__(self, font_size, font_name='comicsans'):
+        self.font_size = font_size
+        self.font = pygame.font.SysFont(font_name, self.font_size)
+
+    def draw_text(self, screen, text, font, text_col, text_position):
+        text = self.font.render(text, True, text_col)
+        text_rect = text.get_rect(center=text_position)
+        screen.blit(text, text_rect)
+
+
+class Menu:
+    def __init__(self):
+        self.menu_options = {'test': 'some_action'}
+
+    def draw_text(self, screen, text, font, text_col, position):
+        img = font.render(text, True, text_col)
+        screen.blit(img, position)
+
+    def draw_screen(self):
+        pass
+
+
 class ScreenHandler:
     def __init__(self, game):
         self.game = game
@@ -206,8 +229,11 @@ class ScreenHandler:
     def change_current_screen(self, new_screen):
         self.current_screen = self.available_screens[new_screen]
 
-    def draw_screen(self, screen):
-        self.current_screen.draw_screen(screen)
+    def draw_screen(self, screen, dt):
+        self.current_screen.draw_screen(screen, dt)
+
+    def handle_events(self, dt):
+        self.current_screen.handle_events(dt)
 
 
 clock = pygame.time.Clock()
@@ -216,6 +242,7 @@ dt = 0
 player = Player(centre, 100, curve_nr=8, path_deviation=10)
 obstacle_handler = ObstacleHandler(45, 270, 200)
 game = Game(player, obstacle_handler)
+screen_handler = ScreenHandler(game)
 while running:
     # poll for events
     # pygame.QUIT event means the user clicked X to close your window
@@ -223,8 +250,9 @@ while running:
         if event.type == pygame.QUIT:
             running = False
 
-    game.draw_screen(screen, dt)
-    game.handle_events(dt)
+    screen_handler.draw_screen(screen, dt)
+    screen_handler.handle_events(dt)
+
 
     # flip() the display to put your work on screen
     pygame.display.flip()
