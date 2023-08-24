@@ -167,17 +167,21 @@ class Game:
         self.player = player
         self.obstacle_handler = obstacle_handler
         self.path_perc = 0
+        self.initial_obstacle = False
 
     def create_init_obstacle(self):
         self.obstacle_handler.create_new_obstacle()
+        self.initial_obstacle = True
 
     def change_path_perc(self, val):
         self.path_perc += val
 
-    def draw_game_screen(self, screen, dt):
+    def draw_screen(self, screen, dt):
         screen.fill("tomato")
         self.player.draw_player(screen)
         self.player.draw_player_path(screen)
+        if not self.initial_obstacle:
+            self.create_init_obstacle()
         self.obstacle_handler.draw_obstacles(screen)
         self.obstacle_handler.move_all_obstacles(dt)
         self.obstacle_handler.generate_next()
@@ -193,13 +197,25 @@ class Game:
             self.player.move(self.path_perc)
 
 
+class ScreenHandler:
+    def __init__(self, game):
+        self.game = game
+        self.current_screen = game
+        self.available_screens = {'game': self.game}
+
+    def change_current_screen(self, new_screen):
+        self.current_screen = self.available_screens[new_screen]
+
+    def draw_screen(self, screen):
+        self.current_screen.draw_screen(screen)
+
+
 clock = pygame.time.Clock()
 running = True
 dt = 0
 player = Player(centre, 100, curve_nr=8, path_deviation=10)
 obstacle_handler = ObstacleHandler(45, 270, 200)
 game = Game(player, obstacle_handler)
-game.create_init_obstacle()
 while running:
     # poll for events
     # pygame.QUIT event means the user clicked X to close your window
@@ -207,7 +223,7 @@ while running:
         if event.type == pygame.QUIT:
             running = False
 
-    game.draw_game_screen(screen, dt)
+    game.draw_screen(screen, dt)
     game.handle_events(dt)
 
     # flip() the display to put your work on screen
