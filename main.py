@@ -175,7 +175,7 @@ class Game:
         self.path_perc += val
 
     def draw_game_screen(self, screen, dt):
-        self.screen.fill("tomato")
+        screen.fill("tomato")
         self.player.draw_player(screen)
         self.player.draw_player_path(screen)
         self.obstacle_handler.draw_obstacles(screen)
