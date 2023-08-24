@@ -202,7 +202,7 @@ class TextHandler:
         self.font_size = font_size
         self.font = pygame.font.SysFont(font_name, self.font_size)
 
-    def draw_text(self, screen, text, font, text_col, text_position):
+    def draw_text(self, screen, text, text_col, text_position):
         text = self.font.render(text, True, text_col)
         text_rect = text.get_rect(center=text_position)
         screen.blit(text, text_rect)
@@ -210,27 +210,36 @@ class TextHandler:
 
 class Menu:
     def __init__(self):
-        self.menu_options = {'test': 'some_action'}
+        self.menu_options = {'test': 'some_action',
+                             'test2': 'other_action',
+                             'test3': 'other_action',
+                             'test4': 'other_action'}
+        self.currently_chosen = list(self.menu_options.keys())[0]
 
-    def draw_text(self, screen, text, font, text_col, position):
-        img = font.render(text, True, text_col)
-        screen.blit(img, position)
+    def draw_screen(self, TextHandler, screen, dt):
+        screen.fill("tomato")
+        text_pos = centre
+        for option in self.menu_options.keys():
+            TextHandler.draw_text(screen, option, 'red', text_pos)
+            text_pos = text_pos[0], text_pos[1] + TextHandler.font_size
 
-    def draw_screen(self):
+    def handle_events(self, dt):
         pass
 
 
 class ScreenHandler:
-    def __init__(self, game):
+    def __init__(self, game, menu):
         self.game = game
-        self.current_screen = game
-        self.available_screens = {'game': self.game}
+        self.menu = menu
+        self.current_screen = menu
+        self.available_screens = {'game': self.game,
+                                  'menu:': self.menu}
 
     def change_current_screen(self, new_screen):
         self.current_screen = self.available_screens[new_screen]
 
-    def draw_screen(self, screen, dt):
-        self.current_screen.draw_screen(screen, dt)
+    def draw_screen(self, TextHandler, screen, dt):
+        self.current_screen.draw_screen(TextHandler, screen, dt)
 
     def handle_events(self, dt):
         self.current_screen.handle_events(dt)
@@ -242,7 +251,9 @@ dt = 0
 player = Player(centre, 100, curve_nr=8, path_deviation=10)
 obstacle_handler = ObstacleHandler(45, 270, 200)
 game = Game(player, obstacle_handler)
-screen_handler = ScreenHandler(game)
+menu = Menu()
+text_handler = TextHandler(40)
+screen_handler = ScreenHandler(game, menu)
 while running:
     # poll for events
     # pygame.QUIT event means the user clicked X to close your window
@@ -250,7 +261,7 @@ while running:
         if event.type == pygame.QUIT:
             running = False
 
-    screen_handler.draw_screen(screen, dt)
+    screen_handler.draw_screen(text_handler, screen, dt)
     screen_handler.handle_events(dt)
 
 
