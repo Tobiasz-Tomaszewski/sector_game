@@ -1,13 +1,9 @@
-
 import pygame
 import pygame.gfxdraw
 import math
 import numpy as np
 from numpy import random
-import sys
 
-global running
-running = True
 
 # pygame setup
 pygame.init()
@@ -172,7 +168,6 @@ class Game:
         self.obstacle_handler = obstacle_handler
         self.path_perc = 0
         self.initial_obstacle = False
-        self.single_click = False
 
     def create_init_obstacle(self):
         self.obstacle_handler.create_new_obstacle()
@@ -192,7 +187,7 @@ class Game:
         self.obstacle_handler.generate_next()
         self.obstacle_handler.delete_dead_obstacles()
 
-    def handle_events(self, dt, event):
+    def handle_events(self, dt, events):
         keys = pygame.key.get_pressed()
         if keys[pygame.K_RIGHT]:
             self.change_path_perc(dt * 40)
@@ -221,27 +216,37 @@ class Menu:
                              'test4': 'other_action'}
         self.currently_chosen_index = 0
         self.currently_chosen = list(self.menu_options.keys())[self.currently_chosen_index]
-        self.single_click = True
+        self.clicked = False
 
     def draw_screen(self, TextHandler, screen, dt):
         screen.fill("tomato")
         text_pos = centre
         for option in self.menu_options.keys():
-            if option == self.currently_chosen:
+            if option is self.currently_chosen:
                 TextHandler.draw_text(screen, option, 'purple', text_pos)
             else:
                 TextHandler.draw_text(screen, option, 'red', text_pos)
             text_pos = text_pos[0], text_pos[1] + TextHandler.font_size
 
-    def handle_events(self, dt, event):
-        # checking if keydown event happened or not
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_DOWN:
-                self.currently_chosen_index += 1
-                self.currently_chosen = list(self.menu_options.keys())[self.currently_chosen_index]
-            elif event.key == pygame.K_UP:
-                self.currently_chosen_index -= 1
-                self.currently_chosen = list(self.menu_options.keys())[self.currently_chosen_index]
+    def handle_events(self, dt, events):
+        keys = pygame.key.get_pressed()
+        for event in events:
+            if pygame.KEYUP:
+                if keys[pygame.K_UP]:
+                    self.currently_chosen_index = (self.currently_chosen_index - 1) % len(self.menu_options)
+                    self.currently_chosen = list(self.menu_options.keys())[self.currently_chosen_index]
+                if keys[pygame.K_DOWN]:
+                    self.currently_chosen_index = (self.currently_chosen_index+ 1) % len(self.menu_options)
+                    self.currently_chosen = list(self.menu_options.keys())[self.currently_chosen_index]
+
+            # for event in events:
+            #     if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:  # Left mouse button
+            #         self.clicked = True
+            #     elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
+            #         if self.clicked:
+            #             # Handle single click logic here
+            #             print("Single click!")
+            #         self.clicked = False
 
 
 class ScreenHandler:
@@ -251,7 +256,6 @@ class ScreenHandler:
         self.current_screen = game
         self.available_screens = {'game': self.game,
                                   'menu:': self.menu}
-        self.single_click = self.current_screen.single_click
 
     def change_current_screen(self, new_screen):
         self.current_screen = self.available_screens[new_screen]
@@ -259,32 +263,12 @@ class ScreenHandler:
     def draw_screen(self, TextHandler, screen, dt):
         self.current_screen.draw_screen(TextHandler, screen, dt)
 
-    def handle_events(self, dt, event):
-        self.current_screen.handle_events(dt, event)
-
-
-class EventHandler:
-    def __init__(self, ScreenHandler):
-        self.screen_handler = ScreenHandler
-        self.single_click = ScreenHandler.single_click
-
-    def handle_events(self, dt):
-        if self.single_click:
-            for event in pygame.event.get():
-                # if event.type == pygame.QUIT:
-                #     global running
-                #     running = False
-                screen_handler.handle_events(dt, event)
-        else:
-            # for event in pygame.event.get():
-            #     if event.type == pygame.QUIT:
-            #         global running
-            #         running = False
-            event = None
-            screen_handler.handle_events(dt, event)
+    def handle_events(self, dt, events):
+        self.current_screen.handle_events(dt, events)
 
 
 clock = pygame.time.Clock()
+running = True
 dt = 0
 player = Player(centre, 100, curve_nr=8, path_deviation=10)
 obstacle_handler = ObstacleHandler(45, 270, 200)
@@ -292,13 +276,16 @@ game = Game(player, obstacle_handler)
 menu = Menu()
 text_handler = TextHandler(40)
 screen_handler = ScreenHandler(game, menu)
-event_handler = EventHandler(screen_handler)
 while running:
     # poll for events
     # pygame.QUIT event means the user clicked X to close your window
-    event_handler.handle_events(dt)
-    screen_handler.draw_screen(text_handler, screen, dt)
+    events = pygame.event.get()
+    for event in events:
+        if event.type == pygame.QUIT:
+            running = False
 
+    screen_handler.draw_screen(text_handler, screen, dt)
+    screen_handler.handle_events(dt, events)
 
 
     # flip() the display to put your work on screen
