@@ -168,6 +168,7 @@ class Game:
         self.obstacle_handler = obstacle_handler
         self.path_perc = 0
         self.initial_obstacle = False
+        self.screen_change = (None, None)
 
     def create_init_obstacle(self):
         self.obstacle_handler.create_new_obstacle()
@@ -195,6 +196,16 @@ class Game:
         if keys[pygame.K_LEFT]:
             self.change_path_perc(-dt * 40)
             self.player.move(self.path_perc)
+        if keys[pygame.K_l]:
+            self.screen_change = (True, 'menu')
+
+        for event in events:
+            if pygame.KEYUP:
+                if keys[pygame.K_ESCAPE]:
+                    self.screen_change = (True, 'menu')
+
+    def reset_next(self):
+        self.screen_change = (None, None)
 
 
 class TextHandler:
@@ -216,7 +227,7 @@ class Menu:
                              'test4': 'other_action'}
         self.currently_chosen_index = 0
         self.currently_chosen = list(self.menu_options.keys())[self.currently_chosen_index]
-        self.clicked = False
+        self.screen_change = (None, None)
 
     def draw_screen(self, TextHandler, screen, dt):
         screen.fill("tomato")
@@ -238,33 +249,34 @@ class Menu:
                 if keys[pygame.K_DOWN]:
                     self.currently_chosen_index = (self.currently_chosen_index+ 1) % len(self.menu_options)
                     self.currently_chosen = list(self.menu_options.keys())[self.currently_chosen_index]
+                if keys[pygame.K_ESCAPE]:
+                    self.screen_change = (True, 'game')
 
-            # for event in events:
-            #     if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:  # Left mouse button
-            #         self.clicked = True
-            #     elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
-            #         if self.clicked:
-            #             # Handle single click logic here
-            #             print("Single click!")
-            #         self.clicked = False
+    def reset_next(self):
+        self.screen_change = (None, None)
 
 
 class ScreenHandler:
     def __init__(self, game, menu):
         self.game = game
         self.menu = menu
-        self.current_screen = game
+        self.current_screen = menu
         self.available_screens = {'game': self.game,
                                   'menu:': self.menu}
-
-    def change_current_screen(self, new_screen):
-        self.current_screen = self.available_screens[new_screen]
 
     def draw_screen(self, TextHandler, screen, dt):
         self.current_screen.draw_screen(TextHandler, screen, dt)
 
     def handle_events(self, dt, events):
         self.current_screen.handle_events(dt, events)
+
+    def change_screen(self):
+        screen_match = {'game': self.game,
+                        'menu': self.menu}
+        if self.current_screen.screen_change[0]:
+            next_screen = screen_match[self.current_screen.screen_change[1]]
+            self.current_screen.reset_next()
+            self.current_screen = next_screen
 
 
 clock = pygame.time.Clock()
@@ -286,7 +298,7 @@ while running:
 
     screen_handler.draw_screen(text_handler, screen, dt)
     screen_handler.handle_events(dt, events)
-
+    screen_handler.change_screen()
 
     # flip() the display to put your work on screen
     pygame.display.flip()
