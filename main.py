@@ -223,6 +223,7 @@ class Game:
         self.obstacle_handler.last_created_obstacle = None
         self.initial_obstacle = False
         self.path_perc = 0
+        self.score = 0
 
 
 class TextHandler:
