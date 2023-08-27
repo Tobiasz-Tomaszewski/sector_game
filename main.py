@@ -3,6 +3,7 @@ import pygame.gfxdraw
 import math
 import numpy as np
 from numpy import random
+from pygame.math import Vector2
 
 
 # pygame setup
@@ -15,9 +16,10 @@ centre = screen.get_width() / 2, screen.get_height() / 2
 
 
 class Player:
-    def __init__(self, centre, radius, curve_nr=0, path_deviation=0,
+    def __init__(self, centre, radius, player_radius, curve_nr=0, path_deviation=0,
                  player_path_resolution=100):
         self.radius = radius
+        self.player_radius = player_radius
         self.centre = centre
         self.is_alive = True
         self.curve_nr = curve_nr
@@ -46,7 +48,7 @@ class Player:
         return self.player_position
 
     def draw_player(self, screen):
-        pygame.draw.circle(screen, 'yellow', self.player_position, 10)
+        pygame.draw.circle(screen, 'yellow', self.player_position, self.player_radius)
 
     def draw_player_path(self, screen):
         pygame.draw.polygon(screen, 'black', self.player_path, width=1)
@@ -225,6 +227,30 @@ class Game:
         self.path_perc = 0
         self.score = 0
 
+    def detect_collision(self):
+        player_circle = pygame.Surface((2*self.player.radius, 2*self.player.radius), pygame.SRCALPHA)
+        pygame.draw.circle(player_circle, [255, 255, 255], [self.player.radius, self.player.radius], self.player.player_radius)
+        # Ball variables.
+        player_pos = Vector2(self.player.player_position)
+        player_rect = player_circle.get_rect(center=player_pos)
+        player_rect.center = player_pos
+
+        obstacles_original = pygame.Surface((height, width), pygame.SRCALPHA)
+        for obstacle in self.obstacle_handler.obstacles.values():
+            pygame.draw.polygon(obstacles_original, (0, 0, 255), obstacle.rotate_obstacle(obstacle.start_angle))
+        obst = obstacles_original
+        pos_blue = Vector2(height / 2, width / 2)
+        obstacle_rect = obst.get_rect(center=pos_blue)
+
+        mask_obst = pygame.mask.from_surface(obst)
+        mask_player = pygame.mask.from_surface(player_circle)
+
+        offset_blue = (obstacle_rect.x - player_rect.x), (obstacle_rect.y - player_rect.y)
+        overlap_blue = mask_player.overlap(mask_obst, offset_blue)
+
+        if overlap_blue:
+            print('collided')
+
 
 class TextHandler:
     def __init__(self, font_size, font_name='comicsans'):
@@ -303,7 +329,8 @@ class ScreenHandler:
         self.pause = pause
         self.current_screen = menu
         self.available_screens = {'game': self.game,
-                                  'menu:': self.menu}
+                                  'menu': self.menu,
+                                  'pause': self.pause}
 
     def draw_screen(self, TextHandler, screen, dt):
         self.current_screen.draw_screen(TextHandler, screen, dt)
@@ -312,11 +339,8 @@ class ScreenHandler:
         self.current_screen.handle_events(dt, events)
 
     def change_screen(self):
-        screen_match = {'game': self.game,
-                        'menu': self.menu,
-                        'pause': self.pause}
         if self.current_screen.screen_change[0]:
-            next_screen = screen_match[self.current_screen.screen_change[1]]
+            next_screen = self.available_screens[self.current_screen.screen_change[1]]
             self.current_screen.reset_next()
             self.current_screen = next_screen
 
@@ -324,7 +348,7 @@ class ScreenHandler:
 clock = pygame.time.Clock()
 running = True
 dt = 0
-player = Player(centre, 100, curve_nr=8, path_deviation=10)
+player = Player(centre, 100, 10, curve_nr=8, path_deviation=10)
 obstacle_handler = ObstacleHandler(45, 270, 200)
 game = Game(player, obstacle_handler)
 menu = Menu()
@@ -342,6 +366,8 @@ while running:
     screen_handler.draw_screen(text_handler, screen, dt)
     screen_handler.handle_events(dt, events)
     screen_handler.change_screen()
+    if screen_handler.current_screen == game:
+        screen_handler.game.detect_collision()
 
     # flip() the display to put your work on screen
     pygame.display.flip()
