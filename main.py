@@ -202,7 +202,7 @@ class Game:
         for event in events:
             if pygame.KEYUP:
                 if keys[pygame.K_ESCAPE]:
-                    self.screen_change = (True, 'menu')
+                    self.screen_change = (True, 'pause')
 
     def reset_next(self):
         self.screen_change = (None, None)
@@ -249,17 +249,40 @@ class Menu:
                 if keys[pygame.K_DOWN]:
                     self.currently_chosen_index = (self.currently_chosen_index+ 1) % len(self.menu_options)
                     self.currently_chosen = list(self.menu_options.keys())[self.currently_chosen_index]
-                if keys[pygame.K_ESCAPE]:
+                if keys[pygame.K_RETURN]:
                     self.screen_change = (True, 'game')
 
     def reset_next(self):
         self.screen_change = (None, None)
 
 
+class PauseScreen:
+    def __init__(self):
+        self.screen_change = (None, None)
+
+    def draw_screen(self, TextHandler, screen, dt):
+        screen.fill("tomato")
+        text_pos = centre
+        TextHandler.draw_text(screen, "Press 'Y' to resume game, press 'N' to go back to the menu.", 'black', text_pos)
+
+    def handle_events(self, dt, events):
+        keys = pygame.key.get_pressed()
+        for event in events:
+            if pygame.KEYUP:
+                if keys[pygame.K_y]:
+                    self.screen_change = (True, 'game')
+                if keys[pygame.K_n]:
+                    self.screen_change = (True, 'menu')
+
+    def reset_next(self):
+        self.screen_change = (None, None)
+
+
 class ScreenHandler:
-    def __init__(self, game, menu):
+    def __init__(self, game, menu, pause):
         self.game = game
         self.menu = menu
+        self.pause = pause
         self.current_screen = menu
         self.available_screens = {'game': self.game,
                                   'menu:': self.menu}
@@ -272,7 +295,8 @@ class ScreenHandler:
 
     def change_screen(self):
         screen_match = {'game': self.game,
-                        'menu': self.menu}
+                        'menu': self.menu,
+                        'pause': self.pause}
         if self.current_screen.screen_change[0]:
             next_screen = screen_match[self.current_screen.screen_change[1]]
             self.current_screen.reset_next()
@@ -287,7 +311,8 @@ obstacle_handler = ObstacleHandler(45, 270, 200)
 game = Game(player, obstacle_handler)
 menu = Menu()
 text_handler = TextHandler(40)
-screen_handler = ScreenHandler(game, menu)
+pause = PauseScreen()
+screen_handler = ScreenHandler(game, menu, pause)
 while running:
     # poll for events
     # pygame.QUIT event means the user clicked X to close your window
