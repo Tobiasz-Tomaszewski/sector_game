@@ -203,9 +203,19 @@ class Game:
             if pygame.KEYUP:
                 if keys[pygame.K_ESCAPE]:
                     self.screen_change = (True, 'pause')
+                if keys[pygame.K_r]:
+                    self.restart_game()
 
     def reset_next(self):
         self.screen_change = (None, None)
+
+    def restart_game(self):
+        self.player.is_alive = True
+        self.player.player_position = self.player.move(0)
+        self.obstacle_handler.obstacles = {}
+        self.obstacle_handler.last_created_obstacle = None
+        self.initial_obstacle = False
+        self.path_perc = 0
 
 
 class TextHandler:
