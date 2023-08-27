@@ -8,7 +8,7 @@ from numpy import random
 # pygame setup
 pygame.init()
 
-global height, width
+#global height, width
 height, width = 1280, 720
 screen = pygame.display.set_mode((height, width))
 centre = screen.get_width() / 2, screen.get_height() / 2
@@ -160,6 +160,10 @@ class ObstacleHandler(Obstacle):
                 to_delete.append(name)
         for dead in to_delete:
             self.delete_obstacle(dead)
+        if to_delete:
+            return True
+        else:
+            return False
 
 
 class Game:
@@ -169,6 +173,7 @@ class Game:
         self.path_perc = 0
         self.initial_obstacle = False
         self.screen_change = (None, None)
+        self.score = 0
 
     def create_init_obstacle(self):
         self.obstacle_handler.create_new_obstacle()
@@ -186,7 +191,9 @@ class Game:
         self.obstacle_handler.draw_obstacles(screen)
         self.obstacle_handler.move_all_obstacles(dt)
         self.obstacle_handler.generate_next()
-        self.obstacle_handler.delete_dead_obstacles()
+        if self.obstacle_handler.delete_dead_obstacles():
+            self.score += 1
+        TextHandler.draw_text(screen, str(self.score), 'purple', (100, 100))
 
     def handle_events(self, dt, events):
         keys = pygame.key.get_pressed()
