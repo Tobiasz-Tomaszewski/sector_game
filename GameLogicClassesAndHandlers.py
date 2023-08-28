@@ -7,6 +7,7 @@ height, width = 1280, 720
 screen = pygame.display.set_mode((height, width))
 centre = screen.get_width() / 2, screen.get_height() / 2
 
+
 class Player:
     def __init__(self, centre, radius, player_radius, curve_nr=0, path_deviation=0,
                  player_path_resolution=100, player_speed = 40):
@@ -217,16 +218,18 @@ class TextHandler:
 
 
 class ScreenHandler:
-    def __init__(self, game, menu, pause, lost):
+    def __init__(self, game, menu, pause, lost, difficulty_screen):
         self.game = game
         self.menu = menu
         self.pause = pause
         self.lost = lost
         self.current_screen = menu
+        self.difficulty_screen = difficulty_screen
         self.available_screens = {'game': self.game,
                                   'menu': self.menu,
                                   'pause': self.pause,
-                                  'lost': self.lost}
+                                  'lost': self.lost,
+                                  'difficulty_screen': self.difficulty_screen}
 
     def draw_screen(self, TextHandler, screen, dt):
         self.current_screen.draw_screen(TextHandler, screen, dt)

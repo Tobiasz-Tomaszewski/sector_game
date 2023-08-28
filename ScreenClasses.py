@@ -19,7 +19,7 @@ class Screen:
     def reset_next(self):
         raise NotImplementedError()
 
-    def get_from_prev_screen(self, score_info_from_game):
+    def get_from_prev_screen(self, info):
         raise NotImplementedError()
 
 
@@ -32,6 +32,7 @@ class Game(Screen):
         self.screen_change = (None, None, None)
         self.score = 0
         self.game_end = False
+        self.difficulty = 'easy'
 
     def create_init_obstacle(self):
         self.obstacle_handler.create_new_obstacle()
@@ -114,12 +115,15 @@ class Game(Screen):
             self.restart_game()
             self.screen_change = (True, 'lost', score)
 
-    def get_from_prev_screen(self, score_info_from_game):
-        return None
+    def get_from_prev_screen(self, info):
+        if info:
+            self.difficulty = info
+            difficulty_dict = self.difficulty.difficulties[self.difficulty.current_difficulty]
+            self.change_game_settings(difficulty_dict)
 
-    def change_game_settings(self, difficulty_handler):
+    def change_game_settings(self, settings_dict):
+        self.restart_game()
         # player settings
-        settings_dict = difficulty_handler.difficulties[difficulty_handler.current_difficulty]
         self.player.radius = settings_dict['player']['radius']
         self.player.player_radius = settings_dict['player']['player_radius']
         self.player.curve_nr = settings_dict['player']['curve_nr']
@@ -130,19 +134,20 @@ class Game(Screen):
         self.obstacle_handler.max_angle = settings_dict['obstacle_handler']['max_angle']
         self.obstacle_handler.distance_between_obstacles = \
             settings_dict['obstacle_handler']['distance_between_obstacles']
+        self.player.player_path = self.player.generate_player_path()
 
 
 class Menu(Screen):
-    def __init__(self):
+    def __init__(self, difficulty_handler):
         self.menu_options = {'Start New Game': 'game',
-                             'Select Difficulty': 'other_action',
+                             'Select Difficulty': 'difficulty_screen',
                              'Best Scores': 'other_action',
-                             'Customize Game Options': 'other_action',
                              'Credits': 'other_action',
                              }
         self.currently_chosen_index = 0
         self.currently_chosen = list(self.menu_options.keys())[self.currently_chosen_index]
         self.screen_change = (None, None, None)
+        self.difficulty = difficulty_handler
 
     def draw_screen(self, TextHandler, screen, dt):
         screen.fill('tomato')
@@ -167,13 +172,13 @@ class Menu(Screen):
                     self.currently_chosen_index = (self.currently_chosen_index+ 1) % len(self.menu_options)
                     self.currently_chosen = list(self.menu_options.keys())[self.currently_chosen_index]
                 if keys[pygame.K_RETURN]:
-                    self.screen_change = (True, self.menu_options[self.currently_chosen], None)
+                    self.screen_change = (True, self.menu_options[self.currently_chosen], self.difficulty)
 
     def reset_next(self):
         self.screen_change = (None, None, None)
 
-    def get_from_prev_screen(self, score_info_from_game):
-        return None
+    def get_from_prev_screen(self, info):
+        self.difficulty = info
 
 
 class PauseScreen(Screen):
@@ -197,22 +202,22 @@ class PauseScreen(Screen):
     def reset_next(self):
         self.screen_change = (None, None, None)
 
-    def get_from_prev_screen(self, score_info_from_game):
+    def get_from_prev_screen(self, info):
         return None
 
 
 class ChooseDifficultyScreen(Screen):
     def __init__(self, difficulty_handler):
         self.difficulty_handler = difficulty_handler
-        self.difficulty_keys = self.difficulty_handler.difficulties.keys()
-        self.currently_chosen_index = list(self.difficulty_keys).index(self.difficulty_handler.current_difficulty)
+        self.currently_chosen_index = list(self.difficulty_handler.difficulties.keys()).index(self.difficulty_handler.current_difficulty)
+        self.screen_change = (None, None, None)
 
     def draw_screen(self, TextHandler, screen, dt):
         screen.fill('tomato')
         text_pos = centre
-        text_pos = text_pos[0], text_pos[1] - (TextHandler.font_size * len(self.difficulty_keys))/2 \
+        text_pos = text_pos[0], text_pos[1] - (TextHandler.font_size * len(self.difficulty_handler.difficulties.keys()))/2 \
                                 + TextHandler.font_size/2
-        for difficulty in self.difficulty_keys:
+        for difficulty in self.difficulty_handler.difficulties.keys():
             if difficulty is self.difficulty_handler.current_difficulty:
                 TextHandler.draw_text(screen, difficulty, 'purple', text_pos)
             else:
@@ -224,18 +229,18 @@ class ChooseDifficultyScreen(Screen):
         for event in events:
             if pygame.KEYUP:
                 if keys[pygame.K_UP]:
-                    self.currently_chosen_index = (self.currently_chosen_index - 1) % len(self.difficulty_keys)
-                    self.difficulty_handler.currently_chosen = list(self.difficulty_keys)[self.currently_chosen_index]
+                    self.currently_chosen_index = (self.currently_chosen_index - 1) % len(self.difficulty_handler.difficulties.keys())
+                    self.difficulty_handler.current_difficulty = list(self.difficulty_handler.difficulties.keys())[self.currently_chosen_index]
                 if keys[pygame.K_DOWN]:
-                    self.currently_chosen_index = (self.currently_chosen_index+ 1) % len(self.difficulty_keys)
-                    self.difficulty_handler.currently_chosen = list(self.difficulty_keys)[self.currently_chosen_index]
+                    self.currently_chosen_index = (self.currently_chosen_index+ 1) % len(self.difficulty_handler.difficulties.keys())
+                    self.difficulty_handler.current_difficulty = list(self.difficulty_handler.difficulties.keys())[self.currently_chosen_index]
                 if keys[pygame.K_RETURN]:
-                    self.screen_change = (True, self.menu_options[self.currently_chosen], None)
+                    self.screen_change = (True, 'menu', self.difficulty_handler)
 
     def reset_next(self):
         self.screen_change = (None, None, None)
 
-    def get_from_prev_screen(self, score_info_from_game):
+    def get_from_prev_screen(self, info):
         return None
 
 
@@ -260,5 +265,5 @@ class LosingScreen(Screen):
     def reset_next(self):
         self.screen_change = (None, None, None)
 
-    def get_from_prev_screen(self, score_info_from_game):
-        self.score = score_info_from_game
+    def get_from_prev_screen(self, info):
+        self.score = info

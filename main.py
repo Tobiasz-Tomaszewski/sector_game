@@ -14,11 +14,13 @@ dt = 0
 player = Player(centre, 75, 15, curve_nr=8, path_deviation=10, player_speed=100)
 obstacle_handler = ObstacleHandler(180, 320, 100)
 game = Game(player, obstacle_handler)
-menu = Menu()
 text_handler = TextHandler(40)
 pause = PauseScreen()
 losing_screen = LosingScreen()
-screen_handler = ScreenHandler(game, menu, pause, losing_screen)
+difficulty_handler = DifficultyHandler()
+difficulty_screen = ChooseDifficultyScreen(difficulty_handler)
+menu = Menu(difficulty_handler)
+screen_handler = ScreenHandler(game, menu, pause, losing_screen, difficulty_screen)
 while running:
     events = pygame.event.get()
     for event in events:
