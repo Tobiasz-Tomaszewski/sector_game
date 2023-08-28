@@ -111,7 +111,7 @@ class Obstacle:
 
 
 class ObstacleHandler(Obstacle):
-    def __init__(self, min_angle, max_angle, distance_between_obstacles = 400):
+    def __init__(self, min_angle, max_angle, distance_between_obstacles=400):
         self.obstacles = {}
         self.min_angle = min_angle
         self.max_angle = max_angle
@@ -168,14 +168,32 @@ class ObstacleHandler(Obstacle):
             return False
 
 
-class Game:
+class Screen:
+    def __init__(self):
+        self.screen_change = (None, None, None)
+
+    def draw_screen(self, TextHandler, screen, dt):
+        raise NotImplementedError()
+
+    def handle_events(self, dt, events):
+        raise NotImplementedError()
+
+    def reset_next(self):
+        raise NotImplementedError()
+
+    def get_from_prev_screen(self, score_info_from_game):
+        raise NotImplementedError()
+
+
+class Game(Screen):
     def __init__(self, player, obstacle_handler):
         self.player = player
         self.obstacle_handler = obstacle_handler
         self.path_perc = 0
         self.initial_obstacle = False
-        self.screen_change = (None, None)
+        self.screen_change = (None, None, None)
         self.score = 0
+        self.game_end = False
 
     def create_init_obstacle(self):
         self.obstacle_handler.create_new_obstacle()
@@ -196,6 +214,7 @@ class Game:
         if self.obstacle_handler.delete_dead_obstacles():
             self.score += 1
         TextHandler.draw_text(screen, str(self.score), 'purple', (100, 100))
+        self.check_for_end()
 
     def handle_events(self, dt, events):
         keys = pygame.key.get_pressed()
@@ -206,17 +225,17 @@ class Game:
             self.change_path_perc(-dt * 40)
             self.player.move(self.path_perc)
         if keys[pygame.K_l]:
-            self.screen_change = (True, 'menu')
+            self.screen_change = (True, 'menu', None)
 
         for event in events:
             if pygame.KEYUP:
                 if keys[pygame.K_ESCAPE]:
-                    self.screen_change = (True, 'pause')
+                    self.screen_change = (True, 'pause', None)
                 if keys[pygame.K_r]:
                     self.restart_game()
 
     def reset_next(self):
-        self.screen_change = (None, None)
+        self.screen_change = (None, None, None)
 
     def restart_game(self):
         self.player.is_alive = True
@@ -226,11 +245,11 @@ class Game:
         self.initial_obstacle = False
         self.path_perc = 0
         self.score = 0
+        self.game_end = False
 
     def detect_collision(self):
         player_circle = pygame.Surface((2*self.player.radius, 2*self.player.radius), pygame.SRCALPHA)
         pygame.draw.circle(player_circle, [255, 255, 255], [self.player.radius, self.player.radius], self.player.player_radius)
-        # Ball variables.
         player_pos = Vector2(self.player.player_position)
         player_rect = player_circle.get_rect(center=player_pos)
         player_rect.center = player_pos
@@ -245,11 +264,20 @@ class Game:
         mask_obst = pygame.mask.from_surface(obst)
         mask_player = pygame.mask.from_surface(player_circle)
 
-        offset_blue = (obstacle_rect.x - player_rect.x), (obstacle_rect.y - player_rect.y)
-        overlap_blue = mask_player.overlap(mask_obst, offset_blue)
+        offset_ = (obstacle_rect.x - player_rect.x), (obstacle_rect.y - player_rect.y)
+        overlap_ = mask_player.overlap(mask_obst, offset_)
 
-        if overlap_blue:
-            print('collided')
+        if overlap_:
+            self.game_end = True
+
+    def check_for_end(self):
+        if self.game_end:
+            score = self.score
+            self.restart_game()
+            self.screen_change = (True, 'lost', score)
+
+    def get_from_prev_screen(self, score_info_from_game):
+        return None
 
 
 class TextHandler:
@@ -263,19 +291,23 @@ class TextHandler:
         screen.blit(text, text_rect)
 
 
-class Menu:
+class Menu(Screen):
     def __init__(self):
-        self.menu_options = {'test': 'some_action',
-                             'test2': 'other_action',
-                             'test3': 'other_action',
-                             'test4': 'other_action'}
+        self.menu_options = {'Start New Game': 'game',
+                             'Select Difficulty': 'other_action',
+                             'Best Scores': 'other_action',
+                             'Customize Game Options': 'other_action',
+                             'Credits': 'other_action',
+                             }
         self.currently_chosen_index = 0
         self.currently_chosen = list(self.menu_options.keys())[self.currently_chosen_index]
-        self.screen_change = (None, None)
+        self.screen_change = (None, None, None)
 
     def draw_screen(self, TextHandler, screen, dt):
-        screen.fill("tomato")
+        screen.fill('tomato')
         text_pos = centre
+        text_pos = text_pos[0], text_pos[1] - (TextHandler.font_size * len(self.menu_options.keys()))/2 \
+                                + TextHandler.font_size/2
         for option in self.menu_options.keys():
             if option is self.currently_chosen:
                 TextHandler.draw_text(screen, option, 'purple', text_pos)
@@ -294,15 +326,18 @@ class Menu:
                     self.currently_chosen_index = (self.currently_chosen_index+ 1) % len(self.menu_options)
                     self.currently_chosen = list(self.menu_options.keys())[self.currently_chosen_index]
                 if keys[pygame.K_RETURN]:
-                    self.screen_change = (True, 'game')
+                    self.screen_change = (True, self.menu_options[self.currently_chosen], None)
 
     def reset_next(self):
-        self.screen_change = (None, None)
+        self.screen_change = (None, None, None)
+
+    def get_from_prev_screen(self, score_info_from_game):
+        return None
 
 
-class PauseScreen:
+class PauseScreen(Screen):
     def __init__(self):
-        self.screen_change = (None, None)
+        self.screen_change = (None, None, None)
 
     def draw_screen(self, TextHandler, screen, dt):
         screen.fill("tomato")
@@ -314,23 +349,53 @@ class PauseScreen:
         for event in events:
             if pygame.KEYUP:
                 if keys[pygame.K_y]:
-                    self.screen_change = (True, 'game')
+                    self.screen_change = (True, 'game', None)
                 if keys[pygame.K_n]:
-                    self.screen_change = (True, 'menu')
+                    self.screen_change = (True, 'menu', None)
 
     def reset_next(self):
-        self.screen_change = (None, None)
+        self.screen_change = (None, None, None)
+
+    def get_from_prev_screen(self, score_info_from_game):
+        return None
+
+
+class LosingScreen(Screen):
+    def __init__(self):
+        self.screen_change = (None, None, None)
+        self.score = None
+
+    def draw_screen(self, TextHandler, screen, dt):
+        screen.fill("tomato")
+        text_pos = centre
+        TextHandler.draw_text(screen, f"You have lost. Your score is {self.score}. Press 'Y' to go back to the menu.",
+                              'black', text_pos)
+
+    def handle_events(self, dt, events):
+        keys = pygame.key.get_pressed()
+        for event in events:
+            if pygame.KEYUP:
+                if keys[pygame.K_y]:
+                    self.screen_change = (True, 'menu', None)
+
+    def reset_next(self):
+        self.screen_change = (None, None, None)
+
+    def get_from_prev_screen(self, score_info_from_game):
+        self.score = score_info_from_game
 
 
 class ScreenHandler:
-    def __init__(self, game, menu, pause):
+    def __init__(self, game, menu, pause, lost):
         self.game = game
         self.menu = menu
         self.pause = pause
+        self.lost = lost
         self.current_screen = menu
         self.available_screens = {'game': self.game,
                                   'menu': self.menu,
-                                  'pause': self.pause}
+                                  'pause': self.pause,
+                                  'lost': self.lost}
 
     def draw_screen(self, TextHandler, screen, dt):
         self.current_screen.draw_screen(TextHandler, screen, dt)
@@ -341,8 +406,10 @@ class ScreenHandler:
     def change_screen(self):
         if self.current_screen.screen_change[0]:
             next_screen = self.available_screens[self.current_screen.screen_change[1]]
+            pass_from_prev_screen = self.current_screen.screen_change[2]
             self.current_screen.reset_next()
             self.current_screen = next_screen
+            self.current_screen.get_from_prev_screen(pass_from_prev_screen)
 
 
 clock = pygame.time.Clock()
@@ -354,10 +421,9 @@ game = Game(player, obstacle_handler)
 menu = Menu()
 text_handler = TextHandler(40)
 pause = PauseScreen()
-screen_handler = ScreenHandler(game, menu, pause)
+losing_screen = LosingScreen()
+screen_handler = ScreenHandler(game, menu, pause, losing_screen)
 while running:
-    # poll for events
-    # pygame.QUIT event means the user clicked X to close your window
     events = pygame.event.get()
     for event in events:
         if event.type == pygame.QUIT:
