@@ -2,6 +2,7 @@ import pygame
 import math
 import numpy as np
 from numpy import random
+from settings import *
 
 height, width = 1280, 720
 screen = pygame.display.set_mode((height, width))
@@ -42,10 +43,10 @@ class Player:
         return self.player_position
 
     def draw_player(self, screen):
-        pygame.draw.circle(screen, 'yellow', self.player_position, self.player_radius)
+        pygame.draw.circle(screen, color_palette['player'], self.player_position, self.player_radius)
 
     def draw_player_path(self, screen):
-        pygame.draw.polygon(screen, 'black', self.player_path, width=1)
+        pygame.draw.polygon(screen, color_palette['text'], self.player_path, width=1)
 
 
 class Obstacle:
@@ -94,7 +95,7 @@ class Obstacle:
     def draw_obstacle(self, screen):
         self.update_alive_status()
         if self.is_alive:
-            pygame.draw.polygon(screen, 'blue', self.rotate_obstacle(self.start_angle))
+            pygame.draw.polygon(screen, color_palette['obstacle'], self.rotate_obstacle(self.start_angle))
 
     def update_alive_status(self):
         if self.inner_radius < 0:

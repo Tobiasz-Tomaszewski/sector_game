@@ -1,8 +1,9 @@
 import pygame
 from pygame.math import Vector2
+from settings import *
 
-height, width = 1280, 720
-screen = pygame.display.set_mode((height, width))
+width, height = 1280, 720
+screen = pygame.display.set_mode((width, height))
 centre = screen.get_width() / 2, screen.get_height() / 2
 
 
@@ -42,7 +43,7 @@ class Game(Screen):
         self.path_perc += val
 
     def draw_screen(self, TextHandler, screen, dt):
-        screen.fill("tomato")
+        screen.fill(color_palette['background'])
         self.player.draw_player(screen)
         self.player.draw_player_path(screen)
         if not self.initial_obstacle:
@@ -52,7 +53,7 @@ class Game(Screen):
         self.obstacle_handler.generate_next()
         if self.obstacle_handler.delete_dead_obstacles():
             self.score += 1
-        TextHandler.draw_text(screen, str(self.score), 'purple', (100, 100))
+        TextHandler.draw_text(screen, str(self.score), color_palette['text'], (width / 2, TextHandler.font_size))
         self.check_for_end()
 
     def handle_events(self, dt, events):
@@ -93,11 +94,11 @@ class Game(Screen):
         player_rect = player_circle.get_rect(center=player_pos)
         player_rect.center = player_pos
 
-        obstacles_original = pygame.Surface((height, width), pygame.SRCALPHA)
+        obstacles_original = pygame.Surface((width, height), pygame.SRCALPHA)
         for obstacle in self.obstacle_handler.obstacles.values():
             pygame.draw.polygon(obstacles_original, (0, 0, 255), obstacle.rotate_obstacle(obstacle.start_angle))
         obst = obstacles_original
-        pos_blue = Vector2(height / 2, width / 2)
+        pos_blue = Vector2(width / 2, height / 2)
         obstacle_rect = obst.get_rect(center=pos_blue)
 
         mask_obst = pygame.mask.from_surface(obst)
@@ -150,15 +151,15 @@ class Menu(Screen):
         self.difficulty = difficulty_handler
 
     def draw_screen(self, TextHandler, screen, dt):
-        screen.fill('tomato')
+        screen.fill(color_palette['background'])
         text_pos = centre
         text_pos = text_pos[0], text_pos[1] - (TextHandler.font_size * len(self.menu_options.keys()))/2 \
                                 + TextHandler.font_size/2
         for option in self.menu_options.keys():
             if option is self.currently_chosen:
-                TextHandler.draw_text(screen, option, 'purple', text_pos)
+                TextHandler.draw_text(screen, option, color_palette['selected text'], text_pos)
             else:
-                TextHandler.draw_text(screen, option, 'red', text_pos)
+                TextHandler.draw_text(screen, option, color_palette['text'], text_pos)
             text_pos = text_pos[0], text_pos[1] + TextHandler.font_size
 
     def handle_events(self, dt, events):
@@ -186,9 +187,10 @@ class PauseScreen(Screen):
         self.screen_change = (None, None, None)
 
     def draw_screen(self, TextHandler, screen, dt):
-        screen.fill("tomato")
+        screen.fill(color_palette['background'])
         text_pos = centre
-        TextHandler.draw_text(screen, "Press 'Y' to resume game, press 'N' to go back to the menu.", 'black', text_pos)
+        TextHandler.draw_text(screen, "Press 'Y' to resume game, press 'N' to go back to the menu.",
+                              color_palette['text'], text_pos)
 
     def handle_events(self, dt, events):
         keys = pygame.key.get_pressed()
@@ -213,15 +215,15 @@ class ChooseDifficultyScreen(Screen):
         self.screen_change = (None, None, None)
 
     def draw_screen(self, TextHandler, screen, dt):
-        screen.fill('tomato')
+        screen.fill(color_palette['background'])
         text_pos = centre
         text_pos = text_pos[0], text_pos[1] - (TextHandler.font_size * len(self.difficulty_handler.difficulties.keys()))/2 \
                                 + TextHandler.font_size/2
         for difficulty in self.difficulty_handler.difficulties.keys():
             if difficulty is self.difficulty_handler.current_difficulty:
-                TextHandler.draw_text(screen, difficulty, 'purple', text_pos)
+                TextHandler.draw_text(screen, difficulty, color_palette['selected text'], text_pos)
             else:
-                TextHandler.draw_text(screen, difficulty, 'red', text_pos)
+                TextHandler.draw_text(screen, difficulty, color_palette['text'], text_pos)
             text_pos = text_pos[0], text_pos[1] + TextHandler.font_size
 
     def handle_events(self, dt, events):
@@ -250,10 +252,10 @@ class LosingScreen(Screen):
         self.score = None
 
     def draw_screen(self, TextHandler, screen, dt):
-        screen.fill("tomato")
+        screen.fill(color_palette['background'])
         text_pos = centre
         TextHandler.draw_text(screen, f"You have lost. Your score is {self.score}. Press 'Y' to go back to the menu.",
-                              'black', text_pos)
+                              color_palette['text'], text_pos)
 
     def handle_events(self, dt, events):
         keys = pygame.key.get_pressed()
