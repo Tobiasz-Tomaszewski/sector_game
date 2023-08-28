@@ -5,8 +5,6 @@ import numpy as np
 from numpy import random
 from pygame.math import Vector2
 
-
-# pygame setup
 pygame.init()
 
 #global height, width
@@ -17,7 +15,7 @@ centre = screen.get_width() / 2, screen.get_height() / 2
 
 class Player:
     def __init__(self, centre, radius, player_radius, curve_nr=0, path_deviation=0,
-                 player_path_resolution=100):
+                 player_path_resolution=100, player_speed = 40):
         self.radius = radius
         self.player_radius = player_radius
         self.centre = centre
@@ -27,6 +25,7 @@ class Player:
         self.player_path_resolution = player_path_resolution
         self.player_path = self.generate_player_path()
         self.player_position = self.move(0)
+        self.player_speed = player_speed
 
     @staticmethod
     def _polar_to_cartesian(coordinates):
@@ -52,9 +51,6 @@ class Player:
 
     def draw_player_path(self, screen):
         pygame.draw.polygon(screen, 'black', self.player_path, width=1)
-
-    def check_alive_status(self, ObstacleHandler):
-        pass
 
 
 class Obstacle:
@@ -219,10 +215,10 @@ class Game(Screen):
     def handle_events(self, dt, events):
         keys = pygame.key.get_pressed()
         if keys[pygame.K_RIGHT]:
-            self.change_path_perc(dt * 40)
+            self.change_path_perc(dt * self.player.player_speed)
             self.player.move(self.path_perc)
         if keys[pygame.K_LEFT]:
-            self.change_path_perc(-dt * 40)
+            self.change_path_perc(-dt * self.player.player_speed)
             self.player.move(self.path_perc)
         if keys[pygame.K_l]:
             self.screen_change = (True, 'menu', None)
@@ -278,6 +274,67 @@ class Game(Screen):
 
     def get_from_prev_screen(self, score_info_from_game):
         return None
+
+    def change_game_settings(self, difficulty_handler):
+        # player settings
+        settings_dict = difficulty_handler.difficulties[difficulty_handler.current_difficulty]
+        self.player.radius = settings_dict['player']['radius']
+        self.player.player_radius = settings_dict['player']['player_radius']
+        self.player.curve_nr = settings_dict['player']['curve_nr']
+        self.player.path_deviation = settings_dict['player']['path_deviation']
+        self.player.player_speed = settings_dict['player']['player_speed']
+        # obstacle_handler settings
+        self.obstacle_handler.min_angle = settings_dict['obstacle_handler']['min_angle']
+        self.obstacle_handler.max_angle = settings_dict['obstacle_handler']['max_angle']
+        self.obstacle_handler.distance_between_obstacles = \
+            settings_dict['obstacle_handler']['distance_between_obstacles']
+
+
+class DifficultyHandler:
+    def __init__(self):
+        self.current_difficulty = 'easy'
+        self.difficulties = {'easy': self.easy_difficulty,
+                             'medium': self.medium_difficulty,
+                             'hard': self.hard_difficulty}
+
+    @property
+    def easy_difficulty(self):
+        easy_difficulty_dict = {'player': {'radius': 100,
+                                           'player_radius': 15,
+                                           'curve_nr': 0,
+                                           'path_deviation': 0,
+                                           'player_speed': 40},
+                                'obstacle_handler': {'min_angle': 45,
+                                                     'max_angle': 270,
+                                                     'distance_between_obstacles': 200}}
+        return easy_difficulty_dict
+
+    @property
+    def medium_difficulty(self):
+        medium_difficulty_dict = {'player': {'radius': 125,
+                                             'player_radius': 15,
+                                             'curve_nr': 6,
+                                             'path_deviation': 20,
+                                             'player_speed': 50},
+                                  'obstacle_handler': {'min_angle': 90,
+                                                       'max_angle': 300,
+                                                       'distance_between_obstacles': 150}}
+        return medium_difficulty_dict
+
+    @property
+    def hard_difficulty(self):
+        hard_difficulty_dict = {'player': {'radius': 75,
+                                           'player_radius': 15,
+                                           'curve_nr': 8,
+                                           'path_deviation': 10,
+                                           'player_speed': 100},
+                                'obstacle_handler': {'min_angle': 180,
+                                                     'max_angle': 320,
+                                                     'distance_between_obstacles': 100}}
+        return hard_difficulty_dict
+
+    def change_current_difficulty(self, new_difficulty):
+        self.current_difficulty = new_difficulty
 
 
 class TextHandler:
@@ -415,8 +472,8 @@ class ScreenHandler:
 clock = pygame.time.Clock()
 running = True
 dt = 0
-player = Player(centre, 100, 10, curve_nr=8, path_deviation=10)
-obstacle_handler = ObstacleHandler(45, 270, 200)
+player = Player(centre, 75, 15, curve_nr=8, path_deviation=10, player_speed=100)
+obstacle_handler = ObstacleHandler(180, 320, 100)
 game = Game(player, obstacle_handler)
 menu = Menu()
 text_handler = TextHandler(40)
