@@ -3,6 +3,18 @@ from GameLogicClassesAndHandlers import *
 
 pygame.init()
 
+# Starting the mixer
+pygame.mixer.init()
+
+# Loading the song
+pygame.mixer.music.load("game_soundtrack.mp3")
+
+# Setting the volume
+pygame.mixer.music.set_volume(0.25)
+
+# Start playing the song
+pygame.mixer.music.play(loops=-1)
+
 #global height, width
 height, width = 1280, 720
 screen = pygame.display.set_mode((height, width))

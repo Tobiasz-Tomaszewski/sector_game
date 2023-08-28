@@ -11,7 +11,7 @@ centre = screen.get_width() / 2, screen.get_height() / 2
 
 class Player:
     def __init__(self, centre, radius, player_radius, curve_nr=0, path_deviation=0,
-                 player_path_resolution=100, player_speed = 40):
+                 player_path_resolution=1000, player_speed=40):
         self.radius = radius
         self.player_radius = player_radius
         self.centre = centre
@@ -165,7 +165,9 @@ class DifficultyHandler:
         self.current_difficulty = 'easy'
         self.difficulties = {'easy': self.easy_difficulty,
                              'medium': self.medium_difficulty,
-                             'hard': self.hard_difficulty}
+                             'hard': self.hard_difficulty,
+                             'insane': self.insane_difficulty
+                             }
 
     @property
     def easy_difficulty(self):
@@ -173,7 +175,7 @@ class DifficultyHandler:
                                            'player_radius': 15,
                                            'curve_nr': 0,
                                            'path_deviation': 0,
-                                           'player_speed': 40},
+                                           'player_speed': 400},
                                 'obstacle_handler': {'min_angle': 45,
                                                      'max_angle': 270,
                                                      'distance_between_obstacles': 200}}
@@ -185,7 +187,7 @@ class DifficultyHandler:
                                              'player_radius': 15,
                                              'curve_nr': 6,
                                              'path_deviation': 20,
-                                             'player_speed': 50},
+                                             'player_speed': 500},
                                   'obstacle_handler': {'min_angle': 90,
                                                        'max_angle': 300,
                                                        'distance_between_obstacles': 150}}
@@ -197,11 +199,23 @@ class DifficultyHandler:
                                            'player_radius': 15,
                                            'curve_nr': 8,
                                            'path_deviation': 10,
-                                           'player_speed': 100},
+                                           'player_speed': 1000},
                                 'obstacle_handler': {'min_angle': 180,
                                                      'max_angle': 320,
                                                      'distance_between_obstacles': 100}}
         return hard_difficulty_dict
+
+    @property
+    def insane_difficulty(self):
+        insane_difficulty_dict = {'player': {'radius': 150,
+                                             'player_radius': 10,
+                                             'curve_nr': 30,
+                                             'path_deviation': 20,
+                                             'player_speed': 1500},
+                                  'obstacle_handler': {'min_angle': 200,
+                                                       'max_angle': 320,
+                                                       'distance_between_obstacles': 90}}
+        return insane_difficulty_dict
 
     def change_current_difficulty(self, new_difficulty):
         self.current_difficulty = new_difficulty
