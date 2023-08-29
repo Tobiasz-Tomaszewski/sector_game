@@ -233,18 +233,21 @@ class TextHandler:
 
 
 class ScreenHandler:
-    def __init__(self, game, menu, pause, lost, difficulty_screen):
+    def __init__(self, game, menu, pause, lost, difficulty_screen, credits_screen):
         self.game = game
         self.menu = menu
         self.pause = pause
         self.lost = lost
+        self.credits = credits_screen
         self.current_screen = menu
         self.difficulty_screen = difficulty_screen
         self.available_screens = {'game': self.game,
                                   'menu': self.menu,
                                   'pause': self.pause,
                                   'lost': self.lost,
-                                  'difficulty_screen': self.difficulty_screen}
+                                  'difficulty_screen': self.difficulty_screen,
+                                  'credits': self.credits
+                                  }
 
     def draw_screen(self, TextHandler, screen, dt):
         self.current_screen.draw_screen(TextHandler, screen, dt)

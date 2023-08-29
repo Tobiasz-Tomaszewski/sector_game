@@ -143,7 +143,7 @@ class Menu(Screen):
         self.menu_options = {'Start New Game': 'game',
                              'Select Difficulty': 'difficulty_screen',
                              'Best Scores': 'other_action',
-                             'Credits': 'other_action',
+                             'Credits': 'credits',
                              }
         self.currently_chosen_index = 0
         self.currently_chosen = list(self.menu_options.keys())[self.currently_chosen_index]
@@ -269,3 +269,31 @@ class LosingScreen(Screen):
 
     def get_from_prev_screen(self, info):
         self.score = info
+
+
+class CreditsScreen(Screen):
+    def __init__(self, credits_list):
+        self.screen_change = (None, None, None)
+        self.credits_list = credits_list
+
+    def draw_screen(self, TextHandler, screen, dt):
+        screen.fill(color_palette['background'])
+        credits_list = ["Press 'Y' to go back"] + self.credits_list
+        text_pos = centre
+        text_pos = text_pos[0], text_pos[1] - (TextHandler.font_size * len(credits_list))/2 + TextHandler.font_size/2
+        for text in credits_list:
+            TextHandler.draw_text(screen, text, color_palette['text'], text_pos)
+            text_pos = text_pos[0], text_pos[1] + TextHandler.font_size + 5
+
+    def handle_events(self, dt, events):
+        keys = pygame.key.get_pressed()
+        for event in events:
+            if pygame.KEYUP:
+                if keys[pygame.K_y]:
+                    self.screen_change = (True, 'menu', None)
+
+    def reset_next(self):
+        self.screen_change = (None, None, None)
+
+    def get_from_prev_screen(self, info):
+        return None
