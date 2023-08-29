@@ -7,7 +7,7 @@ pygame.init()
 pygame.mixer.init()
 
 # Loading the song
-pygame.mixer.music.load("game_soundtrack.mp3")
+pygame.mixer.music.load("assets/game_soundtrack.mp3")
 
 # Setting the volume
 pygame.mixer.music.set_volume(0.25)
