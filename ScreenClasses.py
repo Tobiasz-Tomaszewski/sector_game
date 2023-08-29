@@ -2,6 +2,7 @@ import pygame
 from pygame.math import Vector2
 from settings import *
 import ast
+import GameLogicClassesAndHandlers
 
 width, height = 1280, 720
 screen = pygame.display.set_mode((width, height))
@@ -34,7 +35,7 @@ class Game(Screen):
         self.screen_change = (None, None, None)
         self.score = 0
         self.game_end = False
-        self.difficulty = 'easy'
+        self.difficulty = GameLogicClassesAndHandlers.DifficultyHandler()
 
     def create_init_obstacle(self):
         self.obstacle_handler.create_new_obstacle()
