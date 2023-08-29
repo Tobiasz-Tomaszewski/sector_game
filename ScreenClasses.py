@@ -1,6 +1,7 @@
 import pygame
 from pygame.math import Vector2
 from settings import *
+import ast
 
 width, height = 1280, 720
 screen = pygame.display.set_mode((width, height))
@@ -113,6 +114,15 @@ class Game(Screen):
     def check_for_end(self):
         if self.game_end:
             score = self.score
+            f = open('scores.txt')
+            s = f.read()
+            f.close()
+            scores = ast.literal_eval(s)
+            if scores[self.difficulty.current_difficulty] < score:
+                f = open('scores.txt', 'w')
+                scores[self.difficulty.current_difficulty] = score
+                f.write(str(scores))
+                f.close()
             self.restart_game()
             self.screen_change = (True, 'lost', score)
 
@@ -142,7 +152,7 @@ class Menu(Screen):
     def __init__(self, difficulty_handler):
         self.menu_options = {'Start New Game': 'game',
                              'Select Difficulty': 'difficulty_screen',
-                             'Best Scores': 'other_action',
+                             'Best Scores': 'best_scores',
                              'Credits': 'credits',
                              }
         self.currently_chosen_index = 0
@@ -297,3 +307,43 @@ class CreditsScreen(Screen):
 
     def get_from_prev_screen(self, info):
         return None
+
+
+class BestScoreScreen(Screen):
+    def __init__(self):
+        self.screen_change = (None, None, None)
+        f = open('scores.txt')
+        self.scores = f.read()
+        f.close()
+        self.scores = ast.literal_eval(self.scores)
+
+    def draw_screen(self, TextHandler, screen, dt):
+        screen.fill(color_palette['background'])
+        text_pos = centre
+        text_pos = text_pos[0], text_pos[1] - (TextHandler.font_size * (len(credits_list)+2))/2 + TextHandler.font_size/2
+        TextHandler.draw_text(screen, "Press 'Y' to go back", color_palette['text'], text_pos)
+        text_pos = text_pos[0], text_pos[1] + TextHandler.font_size + 5
+        TextHandler.draw_text(screen, "Best Scores:", color_palette['text'], text_pos)
+        text_pos = text_pos[0], text_pos[1] + TextHandler.font_size + 5
+        for difficulty, score in self.scores.items():
+            TextHandler.draw_text(screen, f"{difficulty}: {score}", color_palette['text'], text_pos)
+            text_pos = text_pos[0], text_pos[1] + TextHandler.font_size + 5
+
+    def handle_events(self, dt, events):
+        keys = pygame.key.get_pressed()
+        for event in events:
+            if pygame.KEYUP:
+                if keys[pygame.K_y]:
+                    self.screen_change = (True, 'menu', None)
+
+    def reset_next(self):
+        self.screen_change = (None, None, None)
+
+    def update_best_scores(self):
+        f = open('scores.txt')
+        self.scores = f.read()
+        f.close()
+        self.scores = ast.literal_eval(self.scores)
+
+    def get_from_prev_screen(self, info):
+        self.update_best_scores()

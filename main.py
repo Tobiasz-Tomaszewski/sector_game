@@ -49,12 +49,14 @@ difficulty_handler = DifficultyHandler()
 difficulty_screen = ChooseDifficultyScreen(difficulty_handler)
 menu = Menu(difficulty_handler)
 credits_screen = CreditsScreen(settings.credits_list)
+best_scores_screen = BestScoreScreen()
 screen_handler = ScreenHandler(game,
                                menu,
                                pause,
                                losing_screen,
                                difficulty_screen,
-                               credits_screen)
+                               credits_screen,
+                               best_scores_screen)
 while running:
     events = pygame.event.get()
     for event in events:
