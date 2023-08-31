@@ -4,25 +4,69 @@ from settings import *
 import ast
 import GameLogicClassesAndHandlers
 
-width, height = 1280, 720
-screen = pygame.display.set_mode((width, height))
-centre = screen.get_width() / 2, screen.get_height() / 2
-
 
 class Screen:
+    """
+    This is abstract class. Its purpose is to clarify all attributes and methods the screen should have in order to
+    work properly with other screens.
+    """
     def __init__(self):
+        """
+        All screens should have "screen_change" attribute. It's a tuple containing three information:
+        screen_change[0] - (bool), True if screen should be changed. False otherwise.
+        screen_change[1] - (string), name of the next screen that should be displayed after the current one
+                           (if screen_change[0] is True). ScreenHandler object is responsible for dealing with switching
+                           the screens and supported screens are stored there in "available_screens" attribute.
+        screen_change[2] - (any), any kind of information we want to pass to the next screen. For example game screen
+                           can pass information about the score to the pause screen, so it can be displayed there.
+        """
         self.screen_change = (None, None, None)
 
-    def draw_screen(self, TextHandler, screen, dt):
+    def handle_screen(self, TextHandler, screen, dt):
+        """
+        This method handles all actions that happens in a single frame in a "while run" pygame loop. It includes screen
+        logic as well as drawing objects.
+        :param TextHandler: instance of TextHandler object. This parameter allows the screen to write things down and
+                            contain information such as font style and size.
+        :type TextHandler: TextHandler
+        :param screen: pygame screen that game screen is being drawn on.
+        :type screen: pygame.surface.Surface
+        :param dt: Delta time in seconds since last frame.
+        :type dt: float
+        :return: None
+        """
         raise NotImplementedError()
 
     def handle_events(self, dt, events):
+        """
+        This method is responsible for handling all events that take place on the screen, such as pressing a key. This
+        includes event that changes the scree, so "handle_events" should have action that updates "screen_change"
+        attribute.
+        It also
+        :param dt: Delta time in seconds since last frame.
+        :type dt: float
+        :param events: Events that happened in a single iteration of pygame "while run" loop - pygame.event.get().
+        :type events: list
+        :return: None
+        """
         raise NotImplementedError()
 
     def reset_next(self):
+        """
+        This method sets the "screen_change" attribute to (None, None, None). It should be called after changing
+        the screen, so it changes only once and awaits another action that will change the screen.
+        :return: None
+        """
         raise NotImplementedError()
 
     def get_from_prev_screen(self, info):
+        """
+        This method gets some information (such as game score) from previous screen to the current one.
+        :param info:
+        :type info: Any
+        :return: Anything that is necessary from the previous screen.
+        :rtype: Any
+        """
         raise NotImplementedError()
 
 
@@ -44,7 +88,7 @@ class Game(Screen):
     def change_path_perc(self, val):
         self.path_perc += val
 
-    def draw_screen(self, TextHandler, screen, dt):
+    def handle_screen(self, TextHandler, screen, dt):
         screen.fill(color_palette['background'])
         self.player.draw_player(screen)
         self.player.draw_player_path(screen)
@@ -161,7 +205,7 @@ class Menu(Screen):
         self.screen_change = (None, None, None)
         self.difficulty = difficulty_handler
 
-    def draw_screen(self, TextHandler, screen, dt):
+    def handle_screen(self, TextHandler, screen, dt):
         screen.fill(color_palette['background'])
         text_pos = centre
         text_pos = text_pos[0], text_pos[1] - (TextHandler.font_size * len(self.menu_options.keys()))/2 \
@@ -197,7 +241,7 @@ class PauseScreen(Screen):
     def __init__(self):
         self.screen_change = (None, None, None)
 
-    def draw_screen(self, TextHandler, screen, dt):
+    def handle_screen(self, TextHandler, screen, dt):
         screen.fill(color_palette['background'])
         text_pos = centre
         TextHandler.draw_text(screen, "Press 'Y' to resume game, press 'N' to go back to the menu.",
@@ -225,7 +269,7 @@ class ChooseDifficultyScreen(Screen):
         self.currently_chosen_index = list(self.difficulty_handler.difficulties.keys()).index(self.difficulty_handler.current_difficulty)
         self.screen_change = (None, None, None)
 
-    def draw_screen(self, TextHandler, screen, dt):
+    def handle_screen(self, TextHandler, screen, dt):
         screen.fill(color_palette['background'])
         text_pos = centre
         text_pos = text_pos[0], text_pos[1] - (TextHandler.font_size * len(self.difficulty_handler.difficulties.keys()))/2 \
@@ -262,7 +306,7 @@ class LosingScreen(Screen):
         self.screen_change = (None, None, None)
         self.score = None
 
-    def draw_screen(self, TextHandler, screen, dt):
+    def handle_screen(self, TextHandler, screen, dt):
         screen.fill(color_palette['background'])
         text_pos = centre
         TextHandler.draw_text(screen, f"You have lost. Your score is {self.score}. Press 'Y' to go back to the menu.",
@@ -287,7 +331,7 @@ class CreditsScreen(Screen):
         self.screen_change = (None, None, None)
         self.credits_list = credits_list
 
-    def draw_screen(self, TextHandler, screen, dt):
+    def handle_screen(self, TextHandler, screen, dt):
         screen.fill(color_palette['background'])
         credits_list = ["Press 'Y' to go back"] + self.credits_list
         text_pos = centre
@@ -318,7 +362,7 @@ class BestScoreScreen(Screen):
         f.close()
         self.scores = ast.literal_eval(self.scores)
 
-    def draw_screen(self, TextHandler, screen, dt):
+    def handle_screen(self, TextHandler, screen, dt):
         screen.fill(color_palette['background'])
         text_pos = centre
         text_pos = text_pos[0], text_pos[1] - (TextHandler.font_size * (len(credits_list)+2))/2 + TextHandler.font_size/2

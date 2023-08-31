@@ -4,14 +4,33 @@ import numpy as np
 from numpy import random
 from settings import *
 
-height, width = 1280, 720
-screen = pygame.display.set_mode((height, width))
-centre = screen.get_width() / 2, screen.get_height() / 2
-
 
 class Player:
+    """
+    This is player object. It contains all information about the player (such as way they move or alive status) and
+    methods related to player behaviour.
+    """
     def __init__(self, centre, radius, player_radius, curve_nr=0, path_deviation=0,
                  player_path_resolution=1000, player_speed=40):
+        """
+        __init__ method of a Player class, it only sets up parameters.
+        :param centre: The centre of the rotation of the player. It should be the centre of the screen.
+        :type centre: tuple
+        :param radius: The radius of rotation.
+        :type radius: float
+        :param player_radius: The radius of a player (player is a circle).
+        :type player_radius: float
+        :param curve_nr: Parameter of a player path. Move curves means more sin waves in the path.
+        :type curve_nr: int >= 0
+        :param path_deviation: Parameter of a player path. Real distance of a player from the center is equal to
+        player_radius + sin(some_angle) * path_deviation.
+        :type path_deviation: int >= 0
+        :default path_deviation: 0
+        :param player_path_resolution: Path is being described as a curve [0, player_path_resolution] -> player_path
+        :type player_path_resolution: float
+        :param player_speed: Player speed, it is being multiplied by delta time in seconds since last frame.
+        :type player_speed: float
+        """
         self.radius = radius
         self.player_radius = player_radius
         self.centre = centre
@@ -24,12 +43,24 @@ class Player:
         self.player_speed = player_speed
 
     @staticmethod
-    def _polar_to_cartesian(coordinates):
+    def __polar_to_cartesian(coordinates):
+        """
+        Simple method to transform polar coordinates to cartesian coordinates.
+        :param coordinates: Coordinates in polar coordinate system.
+        :type coordinates: tuple
+        :return: Coordinates in cartesian coordinate system.
+        :rtype: tuple
+        """
         x = coordinates[0] * math.cos(coordinates[1])
         y = coordinates[0] * math.sin(coordinates[1])
         return x, y
 
     def generate_player_path(self):
+        """
+        Uses "move" method to create approximation of player path that can be drawn later.
+        :return: path of the player represented as list of tuples.
+        :rtype: list
+        """
         player_path = [self.move(i) for i in range(self.player_path_resolution)]
         return player_path
 
@@ -37,7 +68,7 @@ class Player:
         N = N % self.player_path_resolution
         phi = 2 * math.pi * (N / self.player_path_resolution)
         r = self.radius + math.sin(self.curve_nr * phi) * self.path_deviation
-        player_pos = self._polar_to_cartesian((r, phi))
+        player_pos = self.__polar_to_cartesian((r, phi))
         player_pos = player_pos[0] + self.centre[0], player_pos[1] + self.centre[1]
         self.player_position = player_pos
         return self.player_position
@@ -251,8 +282,8 @@ class ScreenHandler:
                                   'best_scores': self.best_scores
                                   }
 
-    def draw_screen(self, TextHandler, screen, dt):
-        self.current_screen.draw_screen(TextHandler, screen, dt)
+    def handle_screen(self, TextHandler, screen, dt):
+        self.current_screen.handle_screen(TextHandler, screen, dt)
 
     def handle_events(self, dt, events):
         self.current_screen.handle_events(dt, events)

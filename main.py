@@ -16,9 +16,7 @@ pygame.mixer.music.set_volume(0.25)
 # Start playing the song
 pygame.mixer.music.play(loops=-1)
 
-width, height = 1280, 720
-screen = pygame.display.set_mode((width, height))
-centre = screen.get_width() / 2, screen.get_height() / 2
+screen = pygame.display.set_mode((settings.width, settings.height))
 
 # Load sound images
 sound_on_selected = pygame.image.load('Sound_icons/Sound_on_selected.png').convert_alpha()
@@ -70,7 +68,7 @@ while running:
                 pygame.mixer.music.unpause()
                 music_play = True
 
-    screen_handler.draw_screen(text_handler, screen, dt)
+    screen_handler.handle_screen(text_handler, screen, dt)
     screen_handler.handle_events(dt, events)
     screen_handler.change_screen()
     if screen_handler.current_screen == game:
@@ -87,7 +85,6 @@ while running:
     elif not music_play:
         screen.blit(sound_off_not_selected, sound_off_not_selected_rect)
 
-    # flip() the display to put your work on screen
     pygame.display.flip()
 
     # limits FPS to 60
