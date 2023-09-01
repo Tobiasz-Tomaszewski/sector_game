@@ -10,7 +10,7 @@ class Player:
     This is player object. It contains all information about the player (such as way they move or alive status) and
     methods related to player behaviour.
 
-    Args:
+    Attributes:
         centre (tuple): The centre of the rotation of the player. It should be the centre of the screen.
         radius (float): The radius of rotation.
         player_radius (float): The radius of a player (player is a circle).
@@ -20,7 +20,10 @@ class Player:
         to player_radius + sin(some_angle) * path_deviation. Default is 0.
         player_path_resolution (int, optional): Path is being described as a curve
         [0, player_path_resolution] -> player_path
-        param player_speed (int): Player speed, it is being multiplied by delta time in seconds since last frame.
+        player_speed (int): Player speed, it is being multiplied by delta time in seconds since last frame.
+        is_alive (bool): Indicator whether the player is alive.
+        player_path (list[tuple[float, float]]): Approximation of a path that contains possible player positions.
+        player_position (tuple): player position
 
     Methods:
         generate_player_path(): Generates approximation of player path as a list of tuples.
@@ -129,15 +132,21 @@ class Obstacle:
     Obstacle object represents a single obstacle in a game. Single obstacle is just a sector of a ring. This class
     contains all necessary information needed for creation of such sector, moving it and checking weather it should
     still exist.
-    Args:
+
+    Attributes:
+        inner_radius (float): Inner radius of a circle inside the ring - initialized with corner of the screen.
+        outer_radius (float): Outer radius of a circle outside the ring - initializes with corner of the screen plus
+                              difference between radiuses.
         start_angle (float): Angle of a rotation of the obstacle.
         angle (float): Angle of a sector of an obstacle ring in degrees.
         speed (int, optional): Speed of an obstacle, later multiplied by dt.
+        is_alive (bool): Indicator whether the obstacle is alive.
+
     Methods:
-        create_polygon_points(radius, float): Creates list of a points from sector of a circle. Later used to generate
-        whole obstacle as polygon.
+        create_polygon_points(radius: float): Creates list of a points from sector of a circle. Later used to generate
+                                              whole obstacle as polygon.
         create_sector_of_the_ring_points(): Creates and returns an obstacle as list of points of some polygon.
-        move_obstacle(dt, float): Moves obstacle closer to the center, depends on dt.
+        move_obstacle(dt: float): Moves obstacle closer to the center, depends on dt.
         rotate_obstacle(rotation_angle: float): Rotates obstacle (list of points) and returns new polygon.
         draw_obstacle(screen: pygame.surface.Surface): Draws obstacle on a provided pygame screen.
         update_alive_status(): Updates is_alive parameter of obstacle. Dead obstacle should be removed from the memory.
@@ -145,11 +154,13 @@ class Obstacle:
     def __init__(self, start_angle, angle, speed=100):
         """
         __init__ function of a class, it sets up all the parameters.
+
         Args:
             start_angle (float): Angle (in degrees) of rotation of the obstacle. It should be remembered that Y-axis of
             a screen is "upside down" compared to traditional coordinate system.
             angle (float): Angle (in degrees) of a sector of a ring.
             speed (int): Speed of an obstacle. Later multiplied by dt.
+
         Returns:
             None
         """
@@ -165,6 +176,7 @@ class Obstacle:
     def create_polygon_points(self, radius):
         """
         Method used to generate and return approximation of a circle. Center of a circle is object attribute for centre.
+
         Args:
             radius (float): Radius of generated circle.
 
@@ -255,7 +267,40 @@ class Obstacle:
 
 
 class ObstacleHandler(Obstacle):
+    """
+    Class that contain knowledge about all obstacles and can deal with multiple obstacles at the same time.
+
+    Attributes:
+        obstacles (dict): Dictionary that contains all the obstacles that are currently in play.
+        min_angle (float): Minimal angle (in degrees) of a randomly generated obstacle.
+        max_angle (float): Max angle (in degrees) of a randomly generated obstacle.
+                           distance_between_obstacles (int, optional): Distance between two obstacles in pixels.
+        last_created_obstacle (str): Name of the obstacle that was created last.
+        distance_between_obstacles (int): Distance between two obstacles in pixels.
+
+    Methods:
+        add_obstacle(obstacle_name: str, obstacle: Obstacle): Adds obstacle to the "obstacles" dict.
+        draw_obstacles(screen: pygame.surface.Surface): Draws all obstacles contained in "obstacles" dict.
+        delete_obstacle(obstacle_name: str): Deletes the obstacle from "obstacles" dict based on a name.
+        create_available_name(): Creates available name for the new obstacle.
+        create_new_obstacle(): Creates new obstacle.
+        move_all_obstacles(dt: float): Moves all obstacles closer to the centre.
+        generate_next(): Calls "create_new_obstacle" method if obstacles are far enough from each other.
+        delete_dead_obstacles(): Checks "obstacles" dict for all dead obstacles and deletes them using "delete_obstacle"
+                                 method.
+    """
     def __init__(self, min_angle, max_angle, distance_between_obstacles=400):
+        """
+        __init__ method of ObstacleHandler.
+
+        Args:
+            min_angle (float): Minimal angle (in degrees) of a randomly generated obstacle.
+            max_angle (float): Max angle (in degrees) of a randomly generated obstacle.
+            distance_between_obstacles (int, optional): Distance between two obstacles in pixels.
+
+        Returns:
+            None: None
+        """
         self.obstacles = {}
         self.min_angle = min_angle
         self.max_angle = max_angle
@@ -263,16 +308,51 @@ class ObstacleHandler(Obstacle):
         self.distance_between_obstacles = distance_between_obstacles
 
     def add_obstacle(self, obstacle_name, obstacle):
+        """
+        Adds new obstacle to the "obstacles" attribute.
+
+        Args:
+            obstacle_name (str): Name of the obstacle.
+            obstacle (Obstacle): Obstacle that is being added.
+
+        Returns:
+            None: None
+        """
         self.obstacles[obstacle_name] = obstacle
 
     def draw_obstacles(self, screen):
+        """
+        Draws all obstacles from "obstacles" attribute on a provided screen.
+
+        Args:
+            screen (pygame.surface.Surface): Pygame screen that obstacle is being drawn on.
+
+        Returns:
+            None: None
+        """
         for obstacle in self.obstacles.values():
             obstacle.draw_obstacle(screen)
 
     def delete_obstacle(self, obstacle_name):
+        """
+        Deletes obstacle from "obstacles" attribute based on a name.
+
+        Args:
+            obstacle_name (str): Name of the obstacle that is being deleted.
+
+        Returns:
+            None: None
+        """
         return self.obstacles.pop(obstacle_name)
 
     def create_available_name(self):
+        """
+        Creates new name for the obstacle. New name is the smallest number (starts from 0) that does not exist yet in
+        "obstacles" attribute, converted to the string.
+
+        Returns:
+            str: Available name for the new obstacle.
+        """
         current_indexes = sorted(int(x) for x in self.obstacles.keys())
         all_indexes = [x for x in range(len(self.obstacles))]
         zipped = zip(current_indexes, all_indexes)
@@ -284,6 +364,15 @@ class ObstacleHandler(Obstacle):
         return str(len(self.obstacles))
 
     def create_new_obstacle(self):
+        """
+        Initializes instance of Obstacle class. Rotation angle is random, angle of obstacle is random, but no lesser
+        than "min_angle" attribute and no bigger than "max_angle" attribute. The method calls "add_obstacle()" method to
+        create new obstacle with name created by "create_available_name()" method. It also updates the
+        "last_created_obstacle" attribute.
+
+        Returns:
+            None: None
+        """
         start_angle = random.uniform(low=0, high=360)
         angle = random.uniform(low=self.min_angle, high=self.max_angle)
         name = self.create_available_name()
@@ -291,15 +380,34 @@ class ObstacleHandler(Obstacle):
         self.last_created_obstacle = name
 
     def move_all_obstacles(self, dt):
+        """
+        Moves all obstacles in the "obstacles" attribute using "move()" method.
+
+        Returns:
+            None: None
+        """
         for obstacle in self.obstacles.values():
             obstacle.move_obstacle(dt)
 
     def generate_next(self):
+        """
+            Check whether the distance between last created obstacle and the corner of the screen is bigger or equal to
+            "distance_between_obstacles" attribute. If yes, calls "create_new_obstacle()" method.
+
+        Returns:
+            None: None
+        """
         if (self.obstacles[self.last_created_obstacle].outer_radius <
                 math.sqrt((centre[0])**2 + (centre[1])**2) - self.distance_between_obstacles):
             self.create_new_obstacle()
 
     def delete_dead_obstacles(self):
+        """
+        Deletes all dead obstacles from "obstacles" attribute using "delete_obstacle()" method.
+
+        Returns:
+            bool: Information whether some obstacle has been deleted.
+        """
         to_delete = []
         for name, obstacle in self.obstacles.items():
             if not obstacle.is_alive:
@@ -313,7 +421,28 @@ class ObstacleHandler(Obstacle):
 
 
 class DifficultyHandler:
+    """
+    Class that contains information about currently selected difficulty of the game, as well as all the possible game
+    difficulty settings.
+
+    Attributes:
+        current_difficulty (str): Name of the currently chosen difficulty.
+        difficulties dict: Dictionary of all possible difficulties. Key is the name (str) and value is
+                           a property (dict).
+
+    Methods:
+        easy_difficulty (property): Dict containing all information needed to generate game on easy difficulty.
+        medium_difficulty (property): Dict containing all information needed to generate game on medium difficulty.
+        hard_difficulty (property): Dict containing all information needed to generate game on hard difficulty.
+        hard_difficulty (property): Dict containing all information needed to generate game on insane difficulty.
+    """
     def __init__(self):
+        """
+        __init__ method for DIfficultyHandler class.
+
+        Returns:
+            None: None
+        """
         self.current_difficulty = 'easy'
         self.difficulties = {'easy': self.easy_difficulty,
                              'medium': self.medium_difficulty,
@@ -323,6 +452,12 @@ class DifficultyHandler:
 
     @property
     def easy_difficulty(self):
+        """
+        Used to generate easy difficulty settings dict.
+
+        Returns:
+            dict: Dict containing easy mode settings.
+        """
         easy_difficulty_dict = {'player': {'radius': 100,
                                            'player_radius': 15,
                                            'curve_nr': 0,
@@ -335,6 +470,12 @@ class DifficultyHandler:
 
     @property
     def medium_difficulty(self):
+        """
+        Used to generate medium difficulty settings dict.
+
+        Returns:
+            dict: Dict containing medium mode settings.
+        """
         medium_difficulty_dict = {'player': {'radius': 125,
                                              'player_radius': 15,
                                              'curve_nr': 6,
@@ -347,6 +488,12 @@ class DifficultyHandler:
 
     @property
     def hard_difficulty(self):
+        """
+        Used to generate hard difficulty settings dict.
+
+        Returns:
+            dict: Dict containing hard mode settings.
+        """
         hard_difficulty_dict = {'player': {'radius': 75,
                                            'player_radius': 15,
                                            'curve_nr': 8,
@@ -359,6 +506,12 @@ class DifficultyHandler:
 
     @property
     def insane_difficulty(self):
+        """
+        Used to generate insane difficulty settings dict.
+
+        Returns:
+            dict: Dict containing insane mode settings.
+        """
         insane_difficulty_dict = {'player': {'radius': 150,
                                              'player_radius': 10,
                                              'curve_nr': 30,
@@ -370,15 +523,54 @@ class DifficultyHandler:
         return insane_difficulty_dict
 
     def change_current_difficulty(self, new_difficulty):
+        """
+        Used to change the "current_difficulty" attribute.
+
+        Args:
+            new_difficulty (dict): New dict with difficulty settings. Must be in the same format as available ones.
+
+        Returns:
+            None: None
+        """
         self.current_difficulty = new_difficulty
 
 
 class TextHandler:
+    """
+    Simple class that is able to write on a screen.
+
+    Attributes:
+        font_size (int): Size of a font in pixels.
+        font (pygame.font.SysFont, optional): Font to that text is being writen in. Default - comicans.
+
+    Methods:
+        draw_text(screen: pygame.surface.Surface, text: str, text_col: tuple, text_position: tuple): Writes text on a
+                 provided screen with provided parameters.
+    """
     def __init__(self, font_size, font_name='comicsans'):
+        """
+        __init__ method for TextHandler class.
+
+        Args:
+            font_size (int): Size of a font in pixels.
+            font (pygame.font.SysFont, optional): Font to that text is being writen in. Default - comicans.
+
+        Returns:
+            None: None
+        """
         self.font_size = font_size
         self.font = pygame.font.SysFont(font_name, self.font_size)
 
     def draw_text(self, screen, text, text_col, text_position):
+        """
+        Writes text on a provided screen.
+
+        Args:
+            screen (pygame.surface.Surface): Pygame screen that text is being drawn onto.
+            text (str): Text that is being drawn.
+            text_col (tuple): Color of the text provided in RGB as tuple.
+            text_position (tuple): Center position of text that is being drawn.
+        """
         text = self.font.render(text, True, text_col)
         text_rect = text.get_rect(center=text_position)
         screen.blit(text, text_rect)
