@@ -9,6 +9,17 @@ class Screen:
     """
     This is abstract class. Its purpose is to clarify all attributes and methods the screen should have in order to
     work properly with other screens.
+
+    Attributes:
+        screen_change (tuple): Contains info about changing the screen.
+
+    Methods:
+        handle_screen(TextHandler, pygame.surface.Surface, float): Deals with all action that takes places in a single
+        frame of main pygame loop.
+        handle_events(float, list): Handles player events. Should have an event or other condition that can change
+        current screen.
+        reset_next(): Sets screen_change parameter to (None, None, None).
+        get_from_prev_screen(Any): Is used to pass any type of information to the next screen.
     """
     def __init__(self):
         """
@@ -19,6 +30,10 @@ class Screen:
                            the screens and supported screens are stored there in "available_screens" attribute.
         screen_change[2] - (any), any kind of information we want to pass to the next screen. For example game screen
                            can pass information about the score to the pause screen, so it can be displayed there.
+        Parameters
+        ---------
+        :param screen_change: Contains information responsible for changing current screen.
+        :type screen_change: tuple
         """
         self.screen_change = (None, None, None)
 
@@ -26,14 +41,15 @@ class Screen:
         """
         This method handles all actions that happens in a single frame in a "while run" pygame loop. It includes screen
         logic as well as drawing objects.
-        :param TextHandler: instance of TextHandler object. This parameter allows the screen to write things down and
-                            contain information such as font style and size.
-        :type TextHandler: TextHandler
-        :param screen: pygame screen that game screen is being drawn on.
-        :type screen: pygame.surface.Surface
-        :param dt: Delta time in seconds since last frame.
-        :type dt: float
-        :return: None
+
+        Args:
+            TextHandler (GameLogicClassesAndHandlers.TextHandler): instance of TextHandler object. This parameter allows
+            the screen to write things down and contain information such as font style and size.
+            screen (pygame.surface.Surface): pygame screen that game screen is being drawn on.
+            dt (float): Delta time in seconds since last frame.
+
+        Returns:
+            None: None
         """
         raise NotImplementedError()
 
@@ -42,12 +58,13 @@ class Screen:
         This method is responsible for handling all events that take place on the screen, such as pressing a key. This
         includes event that changes the scree, so "handle_events" should have action that updates "screen_change"
         attribute.
-        It also
-        :param dt: Delta time in seconds since last frame.
-        :type dt: float
-        :param events: Events that happened in a single iteration of pygame "while run" loop - pygame.event.get().
-        :type events: list
-        :return: None
+
+        Args:
+            dt (float): Delta time in seconds since last frame.
+            events (list): Events that happened in a single iteration of pygame "while run" loop - pygame.event.get().
+
+        Returns:
+            None: None
         """
         raise NotImplementedError()
 
@@ -55,17 +72,21 @@ class Screen:
         """
         This method sets the "screen_change" attribute to (None, None, None). It should be called after changing
         the screen, so it changes only once and awaits another action that will change the screen.
-        :return: None
+
+        Returns:
+            None: None
         """
         raise NotImplementedError()
 
     def get_from_prev_screen(self, info):
         """
         This method gets some information (such as game score) from previous screen to the current one.
-        :param info:
-        :type info: Any
-        :return: Anything that is necessary from the previous screen.
-        :rtype: Any
+
+        Args:
+            info (Any): Anything that is necessary from the previous screen.
+
+        Returns:
+            Any: info
         """
         raise NotImplementedError()
 

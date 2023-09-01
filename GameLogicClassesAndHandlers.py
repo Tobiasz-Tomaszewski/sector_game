@@ -9,27 +9,41 @@ class Player:
     """
     This is player object. It contains all information about the player (such as way they move or alive status) and
     methods related to player behaviour.
+
+    Args:
+        centre (tuple): The centre of the rotation of the player. It should be the centre of the screen.
+        radius (float): The radius of rotation.
+        player_radius (float): The radius of a player (player is a circle).
+        curve_nr (int, optional): Parameter of a player path. Move curves means more sin waves in the path. Default
+        is 0.
+        path_deviation (float, optional): Parameter of a player path. Real distance of a player from the center is equal
+        to player_radius + sin(some_angle) * path_deviation. Default is 0.
+        player_path_resolution (int, optional): Path is being described as a curve
+        [0, player_path_resolution] -> player_path
+        param player_speed (int): Player speed, it is being multiplied by delta time in seconds since last frame.
+
+    Methods:
+        generate_player_path(): Generates approximation of player path as a list of tuples.
+        move(N: float): Changes and returns player_position based on curve [0, player_path_resolution] -> player_path.
+        draw_player(screen: pygame.surface.Surface): Draws a player on a provided screen.
+        draw_player_path(screen: pygame.surface.Surface): Draws approximation of player path on a provided screen.
     """
     def __init__(self, centre, radius, player_radius, curve_nr=0, path_deviation=0,
                  player_path_resolution=1000, player_speed=40):
         """
         __init__ method of a Player class, it only sets up parameters.
-        :param centre: The centre of the rotation of the player. It should be the centre of the screen.
-        :type centre: tuple
-        :param radius: The radius of rotation.
-        :type radius: float
-        :param player_radius: The radius of a player (player is a circle).
-        :type player_radius: float
-        :param curve_nr: Parameter of a player path. Move curves means more sin waves in the path.
-        :type curve_nr: int >= 0
-        :param path_deviation: Parameter of a player path. Real distance of a player from the center is equal to
-        player_radius + sin(some_angle) * path_deviation.
-        :type path_deviation: int >= 0
-        :default path_deviation: 0
-        :param player_path_resolution: Path is being described as a curve [0, player_path_resolution] -> player_path
-        :type player_path_resolution: float
-        :param player_speed: Player speed, it is being multiplied by delta time in seconds since last frame.
-        :type player_speed: float
+
+        Args:
+            centre (tuple): The center of rotation for the player, typically the center of the screen.
+            radius (float): The radius of rotation.
+            player_radius (float): The radius of the player, represented as a circle.
+            curve_nr (int): A parameter that affects the player's path. Higher values result in more sinusoidal curves.
+                            Must be greater than or equal to 0.
+            path_deviation (int, optional): A parameter affecting the player's path. The actual distance from the center
+                                            is player_radius + sin(some_angle) * path_deviation. Default is 0.
+            player_path_resolution (int): Resolution for describing the player's path as a
+                                          curve [0, player_path_resolution].
+            player_speed (int): The player's speed, multiplied by the delta time in seconds since the last frame.
         """
         self.radius = radius
         self.player_radius = player_radius
@@ -46,10 +60,12 @@ class Player:
     def __polar_to_cartesian(coordinates):
         """
         Simple method to transform polar coordinates to cartesian coordinates.
-        :param coordinates: Coordinates in polar coordinate system.
-        :type coordinates: tuple
-        :return: Coordinates in cartesian coordinate system.
-        :rtype: tuple
+
+        Args:
+            coordinates (tuple): Coordinates in polar coordinate system.
+
+        Returns:
+            tuple: Coordinates in cartesian coordinate system.
         """
         x = coordinates[0] * math.cos(coordinates[1])
         y = coordinates[0] * math.sin(coordinates[1])
@@ -58,13 +74,25 @@ class Player:
     def generate_player_path(self):
         """
         Uses "move" method to create approximation of player path that can be drawn later.
-        :return: path of the player represented as list of tuples.
-        :rtype: list
+
+        Returns:
+            list[tuple[float, float]]: Path of the player represented as list of tuples.
         """
         player_path = [self.move(i) for i in range(self.player_path_resolution)]
         return player_path
 
     def move(self, N):
+        """
+        This method calculates the position of a player for any given float "N" working with mod player_path_resolution
+        arithmetics. Player position can be represented as a point on a curve. This method updates player_position as
+        well as returns it.
+
+        Args:
+            N (float): Point from domain of a curve.
+
+        Returns:
+            tuple: New player position in cartesian coordinates.
+        """
         N = N % self.player_path_resolution
         phi = 2 * math.pi * (N / self.player_path_resolution)
         r = self.radius + math.sin(self.curve_nr * phi) * self.path_deviation
@@ -74,14 +102,57 @@ class Player:
         return self.player_position
 
     def draw_player(self, screen):
+        """
+        This method draws player (circle) on a pygame surface.
+
+        Args:
+            screen (pygame.surface.Surface): pygame surface to draw on.
+
+        Returns:
+            None: None
+        """
         pygame.draw.circle(screen, color_palette['player'], self.player_position, self.player_radius)
 
     def draw_player_path(self, screen):
+        """
+        This method draws player path on a pygame surface.
+        :param screen: pygame surface to draw on.
+        :type screen: pygame.surface.Surface
+        :return: None
+        :rtype: None
+        """
         pygame.draw.polygon(screen, color_palette['text'], self.player_path, width=1)
 
 
 class Obstacle:
+    """
+    Obstacle object represents a single obstacle in a game. Single obstacle is just a sector of a ring. This class
+    contains all necessary information needed for creation of such sector, moving it and checking weather it should
+    still exist.
+    Args:
+        start_angle (float): Angle of a rotation of the obstacle.
+        angle (float): Angle of a sector of an obstacle ring in degrees.
+        speed (int, optional): Speed of an obstacle, later multiplied by dt.
+    Methods:
+        create_polygon_points(radius, float): Creates list of a points from sector of a circle. Later used to generate
+        whole obstacle as polygon.
+        create_sector_of_the_ring_points(): Creates and returns an obstacle as list of points of some polygon.
+        move_obstacle(dt, float): Moves obstacle closer to the center, depends on dt.
+        rotate_obstacle(rotation_angle: float): Rotates obstacle (list of points) and returns new polygon.
+        draw_obstacle(screen: pygame.surface.Surface): Draws obstacle on a provided pygame screen.
+        update_alive_status(): Updates is_alive parameter of obstacle. Dead obstacle should be removed from the memory.
+    """
     def __init__(self, start_angle, angle, speed=100):
+        """
+        __init__ function of a class, it sets up all the parameters.
+        Args:
+            start_angle (float): Angle (in degrees) of rotation of the obstacle. It should be remembered that Y-axis of
+            a screen is "upside down" compared to traditional coordinate system.
+            angle (float): Angle (in degrees) of a sector of a ring.
+            speed (int): Speed of an obstacle. Later multiplied by dt.
+        Returns:
+            None
+        """
         # Obstacle will start on the edge of the screen.
         self.inner_radius = math.sqrt((centre[0])**2 + (centre[1])**2)
         self.outer_radius = math.sqrt((centre[0])**2 + (centre[1])**2) + 10
@@ -92,6 +163,14 @@ class Obstacle:
         self.is_alive = True
 
     def create_polygon_points(self, radius):
+        """
+        Method used to generate and return approximation of a circle. Center of a circle is object attribute for centre.
+        Args:
+            radius (float): Radius of generated circle.
+
+        Returns:
+            list[tuple[float, float]]: list of points from circle.
+        """
         polygon_points = []
         for n in range(0, int(self.angle)):
             x = self.centre[0] + int(radius * math.cos(n * math.pi / 180))
@@ -100,16 +179,42 @@ class Obstacle:
         return polygon_points
 
     def create_sector_of_the_ring_points(self):
+        """
+        This method uses create_polygon_points() method to generate an approximation of sector of a ring as a list of
+        tuples.
+
+        Returns:
+            list[tuple[float, float]]: Approximation of a sector of a ring - our obstacle.
+        """
         outer_points = self.create_polygon_points(self.outer_radius)
         inner_points = self.create_polygon_points(self.inner_radius)[::-1]
         points = outer_points + inner_points + [outer_points[0]]
         return points
 
     def move_obstacle(self, dt):
+        """
+        Method used to move an obstacle based on speed attribute and dt.
+
+        Args:
+            dt (float): Delta time in seconds since last frame.
+
+        Returns:
+            None: None
+        """
         self.inner_radius -= self.speed * dt
         self.outer_radius -= self.speed * dt
 
     def rotate_obstacle(self, rotation_angle):
+        """
+        Rotates obstacle (list of points) and returns new polygon as list of tuples. It should be remembered that Y-axis
+        of pygame screen is "upside down" compared to traditional coordinates system.
+
+        Args:
+            rotation_angle (float): Angle (in degrees) of rotation.
+
+        Returns:
+            list[tuple[float, float]]: Rotated obstacle
+        """
         points_to_be_rotated = self.create_sector_of_the_ring_points()
         points_to_be_rotated = [(x - self.centre[0], y - self.centre[1]) for x, y in points_to_be_rotated]
         rotated_points = []
@@ -124,11 +229,27 @@ class Obstacle:
         return rotated_points
 
     def draw_obstacle(self, screen):
+        """
+        Draws obstacle on a provided pygame screen.
+
+        Args:
+            screen (pygame.surface.Surface): Screen that obstacle is being drawn on.
+
+        Returns:
+            None: None
+        """
         self.update_alive_status()
         if self.is_alive:
             pygame.draw.polygon(screen, color_palette['obstacle'], self.rotate_obstacle(self.start_angle))
 
     def update_alive_status(self):
+        """
+            Check whether the radius of inner obstacle is lesser than zero, if yes, changes the "is_alive" parameter to
+            True
+
+            Returns:
+                None: None
+        """
         if self.inner_radius < 0:
             self.is_alive = False
 
