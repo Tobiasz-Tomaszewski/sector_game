@@ -86,7 +86,7 @@ class Screen:
             info (Any): Anything that is necessary from the previous screen.
 
         Returns:
-            Any: info
+            Any: Anything that is necessary from the previous screen.
         """
         raise NotImplementedError()
 
