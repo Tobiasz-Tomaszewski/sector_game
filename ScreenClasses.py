@@ -285,6 +285,13 @@ class Game(Screen):
             self.game_end = True
 
     def check_for_end(self):
+        """
+        Check if game ended, based on "game_end" attribute. If yes, overwrites the file with best scores, restarts the
+        game status and changes "screen_change", so the loosing screen can be displayed.
+
+        Returns:
+            None: None
+        """
         if self.game_end:
             score = self.score
             f = open('scores.txt')
@@ -300,13 +307,33 @@ class Game(Screen):
             self.screen_change = (True, 'lost', score)
 
     def get_from_prev_screen(self, info):
+        """
+        Gets information about game difficulty. This information is passed from menu screen. Menu screen gets this
+        information from ChooseDifficultyScreen class.
+
+        Args:
+            info (GameLogicClassesAndHandlers.DifficultyHandler): Information about the game difficulty.
+
+        Returns:
+            None: None
+        """
         if info:
-            self.restart_game()
             self.difficulty = info
             difficulty_dict = self.difficulty.difficulties[self.difficulty.current_difficulty]
             self.change_game_settings(difficulty_dict)
 
     def change_game_settings(self, settings_dict):
+        """
+        Restarts the game and changes the attributes of a player and obstacle handler in order to impact game
+            difficulty.
+
+        Args:
+            settings_dict (dict): Dictionary containing all game difficulty info. Those dictionaries have specific
+                format and are stored in DifficultyHandler properties.
+
+        Returns:
+            None: None
+        """
         self.restart_game()
         # player settings
         self.player.radius = settings_dict['player']['radius']
