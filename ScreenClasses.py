@@ -114,7 +114,7 @@ class Game(Screen):
             Deals with all action that takes places in a single frame of main pygame loop. This method must be
             implemented for all screens.
         handle_events(dt: float, events: list): Handles player events. Should have an event or other condition that can
-        change current screen. This method must be implemented for all screens.
+            change current screen. This method must be implemented for all screens.
         reset_next(): Sets "screen_change" parameter to (None, None, None). This method must be implemented for all
             screens.
         restart_game(): Performs all actions necessary to consider the current instance of Game class to be "new".
@@ -204,7 +204,7 @@ class Game(Screen):
     def handle_events(self, dt, events):
         """
         This method is responsible for handling all events that take place on the screen, such as pressing a key. This
-        includes event that changes the scree, so "handle_events" should have action that updates "screen_change"
+        includes event that changes the screen, so "handle_events" should have action that updates "screen_change"
         attribute. For details check comments in the code.
 
         Args:
@@ -350,7 +350,42 @@ class Game(Screen):
 
 
 class Menu(Screen):
+    """
+    This class is responsible for creating a menu screen.
+
+    Attributes:
+        menu_options (dict): Dictionary containing all menu options. Keys are strings that are being displayed on the
+            screen, while values are string connected to changing the screen. Values must be the same as in
+            "available_screens" attribute of ScreenHandler class.
+        currently_chosen_index (int): Index of currently chosen menu option.
+        currently_chosen (str): Name of the currently chosen option. Is a key of "menu_options" dict.
+        screen_change (tuple): Screen class attribute.
+        difficulty (GameLogicClassesAndHandlers.DifficultyHandler): Instance of DifficultyHandler class. Contains
+            information about all difficulties as well as currently chosen one.
+
+    Methods:
+        handle_screen(text_handler: GameLogicClassesAndHandlers.TextHandler, screen: pygame.surface.Surface, dt: float):
+            Deals with all action that takes places in a single frame of main pygame loop. This method must be
+            implemented for all screens.
+        handle_events(dt: float, events: list): Handles player events. Should have an event or other condition that can
+            change current screen. This method must be implemented for all screens.
+        reset_next(): Sets "screen_change" parameter to (None, None, None). This method must be implemented for all
+            screens.
+        get_from_prev_screen(info: Any): Is used to pass any type of information to the next screen. This method must be
+            implemented for all screens.
+    """
     def __init__(self, difficulty_handler):
+        """
+        __init__ method of Menu class.
+
+        Args:
+            difficulty_handler (GameLogicClassesAndHandlers.DifficultyHandler): Instance of DifficultyHandler class.
+                That will be responsible for containing information about all difficulties as well as currently
+                chosen one.
+
+        Returns:
+            None: None
+        """
         self.menu_options = {'Start Game': 'game',
                              'Select Difficulty': 'difficulty_screen',
                              'Best Scores': 'best_scores',
@@ -361,20 +396,47 @@ class Menu(Screen):
         self.screen_change = (None, None, None)
         self.difficulty = difficulty_handler
 
-    def handle_screen(self, TextHandler, screen, dt):
+    def handle_screen(self, text_handler, screen, dt):
+        """
+        Deals with all action that takes places in a single frame of main pygame loop. Menu screen is fairly simple.
+        This method draws all menu option in a way that currently chosen one has different color and text is centered.
+
+        Args:
+            text_handler (GameLogicClassesAndHandlers.TextHandler): Instance of TextHandler class. Is used to deal with
+                text.
+            screen (pygame.surface.Surface): Screen that the object are being drawn on.
+            dt (float): Delta time in seconds since last frame.
+
+        Returns:
+            None: None
+        """
         screen.fill(color_palette['background'])
         text_pos = centre
-        text_pos = text_pos[0], text_pos[1] - (TextHandler.font_size * len(self.menu_options.keys()))/2 \
-                                + TextHandler.font_size/2
+        text_pos = text_pos[0], text_pos[1] - (text_handler.font_size * len(self.menu_options.keys())) / 2 \
+                                + text_handler.font_size / 2
         for option in self.menu_options.keys():
             if option is self.currently_chosen:
-                TextHandler.draw_text(screen, option, color_palette['selected text'], text_pos)
+                text_handler.draw_text(screen, option, color_palette['selected text'], text_pos)
             else:
-                TextHandler.draw_text(screen, option, color_palette['text'], text_pos)
-            text_pos = text_pos[0], text_pos[1] + TextHandler.font_size
+                text_handler.draw_text(screen, option, color_palette['text'], text_pos)
+            text_pos = text_pos[0], text_pos[1] + text_handler.font_size
 
     def handle_events(self, dt, events):
+        """
+        This method is responsible for handling all events that take place on the screen, such as pressing a key. This
+        includes event that changes the scree, so "handle_events" should have action that updates "screen_change"
+        attribute. For details check comments in the code.
+
+        Args:
+            dt (float): Delta time in seconds since last frame.
+            events (list): Events that happened in a single iteration of pygame "while run" loop - pygame.event.get().
+
+        Returns:
+            None: None
+        """
         keys = pygame.key.get_pressed()
+        # Arrow up and down keys are responsible for changing the currently chosen option while Enter (Return key)
+        # changes the screen.
         for event in events:
             if pygame.KEYUP:
                 if keys[pygame.K_UP]:
@@ -387,24 +449,92 @@ class Menu(Screen):
                     self.screen_change = (True, self.menu_options[self.currently_chosen], self.difficulty)
 
     def reset_next(self):
+        """
+        This method sets the "screen_change" attribute to (None, None, None). It should be called after changing
+        the screen, so it changes only once and awaits another action that will change the screen.
+
+        Returns:
+            None: None
+        """
         self.screen_change = (None, None, None)
 
     def get_from_prev_screen(self, info):
+        """
+        Gets information about game difficulty. This information is passed from select difficulty screen and later sent
+        to the game.
+
+        Args:
+            info (GameLogicClassesAndHandlers.DifficultyHandler): Information about the game difficulty.
+
+        Returns:
+            None: None
+        """
         self.difficulty = info
 
 
 class PauseScreen(Screen):
+    """
+    This class is responsible for creating a pause screen.
+
+    Attributes:
+        screen_change (tuple): Screen class attribute.
+
+
+    Methods:
+        handle_screen(text_handler: GameLogicClassesAndHandlers.TextHandler, screen: pygame.surface.Surface, dt: float):
+            Deals with all action that takes places in a single frame of main pygame loop. This method must be
+            implemented for all screens.
+        handle_events(dt: float, events: list): Handles player events. Should have an event or other condition that can
+            change current screen. This method must be implemented for all screens.
+        reset_next(): Sets "screen_change" parameter to (None, None, None). This method must be implemented for all
+            screens.
+        get_from_prev_screen(info: Any): Is used to pass any type of information to the next screen. This method must be
+            implemented for all screens.
+    """
     def __init__(self):
+        """
+        __init__ method of PauseScreen class.
+
+        Returns:
+            None: None
+        """
         self.screen_change = (None, None, None)
 
-    def handle_screen(self, TextHandler, screen, dt):
+    def handle_screen(self, text_handler, screen, dt):
+        """
+        Deals with all action that takes places in a single frame of main pygame loop. Pause screen is very simple.
+        it only needs to display info about how to exit to menu, or resume game.
+
+        Args:
+            text_handler (GameLogicClassesAndHandlers.TextHandler): Instance of TextHandler class. Is used to deal with
+                text.
+            screen (pygame.surface.Surface): Screen that the object are being drawn on.
+            dt (float): Delta time in seconds since last frame.
+
+        Returns:
+            None: None
+        """
         screen.fill(color_palette['background'])
         text_pos = centre
-        TextHandler.draw_text(screen, "Press 'Y' to resume game, press 'N' to go back to the menu.",
-                              color_palette['text'], text_pos)
+        text_handler.draw_text(screen, "Press 'Y' to resume game, press 'N' to go back to the menu.",
+                               color_palette['text'], text_pos)
 
     def handle_events(self, dt, events):
+        """
+        This method is responsible for handling all events that take place on the screen, such as pressing a key. This
+        includes event that changes the scree, so "handle_events" should have action that updates "screen_change"
+        attribute. For details check comments in the code.
+
+        Args:
+            dt (float): Delta time in seconds since last frame.
+            events (list): Events that happened in a single iteration of pygame "while run" loop - pygame.event.get().
+
+        Returns:
+            None: None
+        """
         keys = pygame.key.get_pressed()
+        # Only actions that can take place on pause screen are going back to the game by pressing 'Y' key or going to
+        # menu by pressing 'N'.
         for event in events:
             if pygame.KEYUP:
                 if keys[pygame.K_y]:
@@ -413,9 +543,25 @@ class PauseScreen(Screen):
                     self.screen_change = (True, 'menu', None)
 
     def reset_next(self):
+        """
+        This method sets the "screen_change" attribute to (None, None, None). It should be called after changing
+        the screen, so it changes only once and awaits another action that will change the screen.
+
+        Returns:
+            None: None
+        """
         self.screen_change = (None, None, None)
 
     def get_from_prev_screen(self, info):
+        """
+        This method does nothing for this screen. Pause screen does not need any information from game screen
+
+        Args:
+            info (Any): Does not matter.
+
+        Returns:
+            None: None
+        """
         return None
 
 
