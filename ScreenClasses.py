@@ -290,17 +290,17 @@ class ChooseDifficultyScreen(Screen):
         self.currently_chosen_index = list(self.difficulty_handler.difficulties.keys()).index(self.difficulty_handler.current_difficulty)
         self.screen_change = (None, None, None)
 
-    def handle_screen(self, TextHandler, screen, dt):
+    def handle_screen(self, text_handler, screen, dt):
         screen.fill(color_palette['background'])
         text_pos = centre
-        text_pos = text_pos[0], text_pos[1] - (TextHandler.font_size * len(self.difficulty_handler.difficulties.keys()))/2 \
-                                + TextHandler.font_size/2
+        text_pos = text_pos[0], text_pos[1] - (text_handler.font_size * len(self.difficulty_handler.difficulties.keys())) / 2 \
+                                + text_handler.font_size / 2
         for difficulty in self.difficulty_handler.difficulties.keys():
             if difficulty is self.difficulty_handler.current_difficulty:
-                TextHandler.draw_text(screen, difficulty, color_palette['selected text'], text_pos)
+                text_handler.draw_text(screen, difficulty, color_palette['selected text'], text_pos)
             else:
-                TextHandler.draw_text(screen, difficulty, color_palette['text'], text_pos)
-            text_pos = text_pos[0], text_pos[1] + TextHandler.font_size
+                text_handler.draw_text(screen, difficulty, color_palette['text'], text_pos)
+            text_pos = text_pos[0], text_pos[1] + text_handler.font_size
 
     def handle_events(self, dt, events):
         keys = pygame.key.get_pressed()

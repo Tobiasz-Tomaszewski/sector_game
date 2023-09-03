@@ -553,7 +553,7 @@ class TextHandler:
 
         Args:
             font_size (int): Size of a font in pixels.
-            font (pygame.font.SysFont, optional): Font to that text is being writen in. Default - comicans.
+            font_name (str, optional): Font to that text is being writen in. Default - comicans.
 
         Returns:
             None: None
@@ -577,7 +577,45 @@ class TextHandler:
 
 
 class ScreenHandler:
+    """
+    ScreenHandler is class that takes care about displaying the proper game screen. It contains knowledge about all
+    possible screens, current screen and is responsible for executing its methods.
+
+    Attributes:
+        game (ScreenClasses.Game): Instance of a Game class.
+        menu (ScreenClasses.Menu): Instance of a Menu class.
+        pause (ScreenClasses.PauseScreen): Instance of a PauseScreen class.
+        lost (ScreenClasses.LosingScreen): Instance of a LosingScreen class.
+        credits (ScreenClasses.CreditsScreen): Instance of a CreditsScreen class.
+        current_screen (ScreenClasses.Screen): Current screen. Initial screen is menu.
+        difficulty_screen (ScreenClasses.ChooseDifficultyScreen): Instance of a ChooseDifficultyScreen class.
+        best_scores (ScreenClasses.BestScoreScreen): Instance of a BestScoreScreen class.
+        available_screens (dict): Dictionary containing all possible game screens. Keys of the dict are strings
+            representing the name of the screen. It is extremely important that while changing the screen,
+            screen_change[1] value exists in this dictionary.
+
+    Methods:
+        handle_screen(text_handler: TextHandler, screen: pygame.surface.Surface, dt: float): Executes "handle_screen"
+            method of the current screen.
+        handle_events(dt: float, events: list): Executes "handle_events" method of the current screen.
+        change_screen(): Executes "change_screen" method of the current screen.
+    """
     def __init__(self, game, menu, pause, lost, difficulty_screen, credits_screen, best_scores_screen):
+        """
+        __init__ method of ScreenHandler class.
+
+        Args:
+            game (ScreenClasses.Game): Instance of a Game class.
+            menu (ScreenClasses.Menu): Instance of a Menu class.
+            pause (ScreenClasses.PauseScreen): Instance of a PauseScreen class.
+            lost (ScreenClasses.LosingScreen): Instance of a LosingScreen class.
+            difficulty_screen (ScreenClasses.ChooseDifficultyScreen): Instance of a ChooseDifficultyScreen class.
+            credits_screen (ScreenClasses.CreditsScreen): Instance of a CreditsScreen class.
+            best_scores_screen (ScreenClasses.BestScoreScreen): Instance of a BestScoreScreen class.
+
+        Returns:
+            None: None
+        """
         self.game = game
         self.menu = menu
         self.pause = pause
@@ -595,13 +633,41 @@ class ScreenHandler:
                                   'best_scores': self.best_scores
                                   }
 
-    def handle_screen(self, TextHandler, screen, dt):
-        self.current_screen.handle_screen(TextHandler, screen, dt)
+    def handle_screen(self, text_handler, screen, dt):
+        """
+        Executes "handle_screen" method of the current screen.
+
+        Args:
+            text_handler (TextHandler): Instance of TextHandler class. Is used to write text on screen.
+            screen (pygame.surface.Surface): Screen that everything is being drawn on.
+            dt (float): Delta time in seconds since last frame.
+
+        Returns:
+            None: None
+        """
+        self.current_screen.handle_screen(text_handler, screen, dt)
 
     def handle_events(self, dt, events):
+        """
+        Executes "handle_events" method of the current screen.
+
+        Args:
+            dt (float): Delta time in seconds since last frame.
+            events (list): Events that happened in a single iteration of pygame "while run" loop - pygame.event.get().
+
+        Returns:
+            None: None
+        """
         self.current_screen.handle_events(dt, events)
 
     def change_screen(self):
+        """
+        Changes the current screen if current_screen.screen_change[0] is True. It also is responsible for passing any
+        information to the next screen.
+
+        Returns:
+            None: None
+        """
         if self.current_screen.screen_change[0]:
             next_screen = self.available_screens[self.current_screen.screen_change[1]]
             pass_from_prev_screen = self.current_screen.screen_change[2]
