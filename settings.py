@@ -6,7 +6,7 @@ color_palette = {'background': (51, 101, 138),
                  }
 
 credits_list = ['Design: Tobiasz Tomaszewski',
-                'Programming: Tobiasz Tomaszewski',
+                'Development: Tobiasz Tomaszewski',
                 'Music: Tobiasz Tomaszewski']
 
 width, height = 1280, 720
