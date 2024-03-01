@@ -438,7 +438,7 @@ class DifficultyHandler:
     """
     def __init__(self):
         """
-        __init__ method for DIfficultyHandler class.
+        __init__ method for DifficultyHandler class.
 
         Returns:
             None: None
